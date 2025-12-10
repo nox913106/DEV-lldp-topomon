@@ -1,0 +1,77 @@
+"""
+FastAPI main application entry point
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
+import logging
+
+from app.config import get_settings
+from app.db.database import init_db
+from app.api import devices, topology, alerts, profiles, groups, discovery
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events"""
+    # Startup
+    logger.info(f"Starting {settings.app_name}...")
+    await init_db()
+    logger.info("Database initialized")
+    
+    yield
+    
+    # Shutdown
+    logger.info(f"Shutting down {settings.app_name}...")
+
+
+# Create FastAPI application
+app = FastAPI(
+    title=settings.app_name,
+    description="LLDP/CDP Network Topology Monitor",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API routes
+app.include_router(devices.router, prefix="/api/v1/devices", tags=["Devices"])
+app.include_router(topology.router, prefix="/api/v1/topology", tags=["Topology"])
+app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
+app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["Alert Profiles"])
+app.include_router(groups.router, prefix="/api/v1/groups", tags=["Device Groups"])
+app.include_router(discovery.router, prefix="/api/v1/discovery", tags=["Discovery"])
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "name": settings.app_name,
+        "version": "1.0.0",
+        "status": "running"
+    }
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "healthy"}

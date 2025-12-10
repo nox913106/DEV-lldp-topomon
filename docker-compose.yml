@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://topomon:topomon@db:5432/topomon
+      - REDIS_URL=redis://redis:6379
+      - APP_DEBUG=true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+    networks:
+      - topomon_net
+    restart: unless-stopped
+
+  # SNMP Collector Service
+  collector:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://topomon:topomon@db:5432/topomon
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: python -m app.collector
+    networks:
+      - topomon_net
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=topomon
+      - POSTGRES_PASSWORD=topomon
+      - POSTGRES_DB=topomon
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U topomon" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - topomon_net
+    restart: unless-stopped
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - topomon_net
+    restart: unless-stopped
+
+networks:
+  topomon_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.255.0/24
+          gateway: 192.168.255.1
+
+volumes:
+  pgdata:
+  redisdata:
+
+
