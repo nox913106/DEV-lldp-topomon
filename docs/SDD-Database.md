@@ -3,6 +3,10 @@
 ## 1. ER Diagram
 
 ```
+                    device_groups (巢狀群組)
+                         │
+                         │ N:M
+                         ▼
 devices ─────────────┬──► alert_profiles
     │                │
     │ 1:N            │
@@ -166,6 +170,35 @@ CREATE TABLE system_config (
     value JSONB,
     updated_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+### 2.9 device_groups
+
+```sql
+CREATE TABLE device_groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    parent_id INTEGER REFERENCES device_groups(id),
+    color VARCHAR(20),
+    icon VARCHAR(50),
+    display_order INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_device_groups_parent ON device_groups(parent_id);
+```
+
+### 2.10 device_group_members
+
+```sql
+CREATE TABLE device_group_members (
+    device_id INTEGER REFERENCES devices(id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES device_groups(id) ON DELETE CASCADE,
+    PRIMARY KEY (device_id, group_id)
+);
+
+CREATE INDEX idx_device_group_members_group ON device_group_members(group_id);
 ```
 
 ---
