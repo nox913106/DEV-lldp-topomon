@@ -77,7 +77,7 @@ networks:
     ipam:
       config:
         - subnet: 192.168.255.0/24
-          gateway: 192.168.255.1
+          gateway: 192.168.255.254
 
 volumes:
   pgdata:
