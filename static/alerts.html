@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts - DEV-lldp-topomon</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .alerts-container {
+            padding: 1.5rem;
+            height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .stat-icon.critical {
+            background: rgba(248, 81, 73, 0.2);
+        }
+
+        .stat-icon.warning {
+            background: rgba(210, 153, 34, 0.2);
+        }
+
+        .stat-icon.info {
+            background: rgba(88, 166, 255, 0.2);
+        }
+
+        .stat-icon.success {
+            background: rgba(63, 185, 80, 0.2);
+        }
+
+        .stat-info h3 {
+            font-size: 2rem;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .stat-info p {
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+            font-size: 0.875rem;
+        }
+
+        .alerts-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 1.5rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .alerts-list-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .alerts-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-tertiary);
+            padding: 0.25rem;
+            border-radius: 6px;
+        }
+
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .filter-tab.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .alerts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .alert-card {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .alert-card:hover {
+            transform: translateX(4px);
+        }
+
+        .alert-card.critical {
+            border-left-color: var(--danger);
+        }
+
+        .alert-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .alert-card.info {
+            border-left-color: var(--accent);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-type {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-severity {
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .alert-severity.critical {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--danger);
+        }
+
+        .alert-severity.warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--warning);
+        }
+
+        .alert-message {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-ack {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .btn-ack:hover {
+            border-color: var(--accent);
+        }
+
+        /* History Panel */
+        .history-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-header h3 {
+            margin: 0;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-event {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-event-type {
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .history-event-type.triggered {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--danger);
+        }
+
+        .history-event-type.recovered {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--success);
+        }
+
+        .history-event-type.acknowledged {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent);
+        }
+
+        .history-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .history-message {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌐</span>
+                <span class="logo-text">LLDP Topology Monitor</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-item">Topology</a>
+                <a href="/devices" class="nav-item">Devices</a>
+                <a href="/alerts" class="nav-item active">Alerts</a>
+                <a href="/groups" class="nav-item">Groups</a>
+                <a href="/settings" class="nav-item">Settings</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <div class="alerts-container">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon critical">🔴</div>
+                    <div class="stat-info">
+                        <h3 id="stat-critical">0</h3>
+                        <p>Critical</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning">🟡</div>
+                    <div class="stat-info">
+                        <h3 id="stat-warning">0</h3>
+                        <p>Warning</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon info">🔵</div>
+                    <div class="stat-info">
+                        <h3 id="stat-info">0</h3>
+                        <p>Info</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success">✅</div>
+                    <div class="stat-info">
+                        <h3 id="stat-resolved">0</h3>
+                        <p>Resolved Today</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Content -->
+            <div class="alerts-content">
+                <!-- Alerts List -->
+                <div class="alerts-list-container">
+                    <div class="alerts-list-header">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" data-filter="active">Active</button>
+                            <button class="filter-tab" data-filter="all">All</button>
+                            <button class="filter-tab" data-filter="critical">Critical</button>
+                            <button class="filter-tab" data-filter="warning">Warning</button>
+                        </div>
+                        <button class="btn-ack" id="btn-ack-all">Acknowledge All</button>
+                    </div>
+                    <div class="alerts-list" id="alerts-list">
+                        <!-- Alerts will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- History Panel -->
+                <div class="history-panel">
+                    <div class="history-header">
+                        <h3>📜 Recent Activity</h3>
+                    </div>
+                    <div class="history-list" id="history-list">
+                        <!-- History will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let alerts = [];
+        let currentFilter = 'active';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAlerts();
+            setupEventListeners();
+
+            // Auto-refresh every 30 seconds
+            setInterval(loadAlerts, 30000);
+        });
+
+        function setupEventListeners() {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.filter;
+                    renderAlerts();
+                });
+            });
+
+            document.getElementById('btn-ack-all').addEventListener('click', acknowledgeAll);
+        }
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/alerts?limit=100`);
+                const data = await response.json();
+                alerts = data.alerts || [];
+
+                updateStats();
+                renderAlerts();
+                renderHistory();
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        function updateStats() {
+            const active = alerts.filter(a => a.is_active);
+
+            document.getElementById('stat-critical').textContent =
+                active.filter(a => a.severity === 'critical').length;
+            document.getElementById('stat-warning').textContent =
+                active.filter(a => a.severity === 'warning').length;
+            document.getElementById('stat-info').textContent =
+                active.filter(a => a.severity === 'info').length;
+
+            // Count resolved in last 24h
+            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            document.getElementById('stat-resolved').textContent =
+                alerts.filter(a => !a.is_active && new Date(a.recovered_at) > yesterday).length;
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alerts-list');
+
+            let filtered = alerts;
+            if (currentFilter === 'active') {
+                filtered = alerts.filter(a => a.is_active);
+            } else if (currentFilter === 'critical') {
+                filtered = alerts.filter(a => a.severity === 'critical' && a.is_active);
+            } else if (currentFilter === 'warning') {
+                filtered = alerts.filter(a => a.severity === 'warning' && a.is_active);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🎉</div>
+                        <p>No alerts! Everything is running smoothly.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(a => `
+                <div class="alert-card ${a.severity}">
+                    <div class="alert-header">
+                        <span class="alert-type">
+                            ${getAlertIcon(a.alert_type)} ${formatAlertType(a.alert_type)}
+                        </span>
+                        <span class="alert-severity ${a.severity}">${a.severity.toUpperCase()}</span>
+                    </div>
+                    <div class="alert-message">${a.message || 'No details'}</div>
+                    <div class="alert-meta">
+                        <span>⏰ ${formatTime(a.triggered_at)}</span>
+                        <div class="alert-actions">
+                            ${a.is_active && !a.acknowledged_at ?
+                    `<button class="btn-ack" onclick="acknowledgeAlert(${a.id})">Acknowledge</button>` :
+                    a.acknowledged_at ? `<span>✓ Ack'd</span>` : ''
+                }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+
+            // Get recently changed alerts (last 10)
+            const recent = [...alerts]
+                .sort((a, b) => new Date(b.triggered_at) - new Date(a.triggered_at))
+                .slice(0, 10);
+
+            if (recent.length === 0) {
+                container.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary);">No recent activity</p>';
+                return;
+            }
+
+            container.innerHTML = recent.map(a => `
+                <div class="history-item">
+                    <div class="history-event">
+                        <span class="history-event-type ${a.is_active ? 'triggered' : 'recovered'}">
+                            ${a.is_active ? 'TRIGGERED' : 'RECOVERED'}
+                        </span>
+                        <span class="history-time">${formatTime(a.is_active ? a.triggered_at : a.recovered_at)}</span>
+                    </div>
+                    <div class="history-message">${a.message || formatAlertType(a.alert_type)}</div>
+                </div>
+            `).join('');
+        }
+
+        function getAlertIcon(type) {
+            const icons = {
+                'device_offline': '📴',
+                'cpu_high': '🔥',
+                'memory_high': '💾',
+                'link_high_utilization': '📈'
+            };
+            return icons[type] || '⚠️';
+        }
+
+        function formatAlertType(type) {
+            const types = {
+                'device_offline': 'Device Offline',
+                'cpu_high': 'High CPU',
+                'memory_high': 'High Memory',
+                'link_high_utilization': 'Link High Utilization'
+            };
+            return types[type] || type;
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString();
+        }
+
+        async function acknowledgeAlert(alertId) {
+            try {
+                await fetch(`${API_BASE}/alerts/${alertId}/acknowledge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acknowledged_by: 'admin' })
+                });
+                loadAlerts();
+            } catch (error) {
+                console.error('Error acknowledging alert:', error);
+            }
+        }
+
+        async function acknowledgeAll() {
+            const active = alerts.filter(a => a.is_active && !a.acknowledged_at);
+
+            for (const alert of active) {
+                await acknowledgeAlert(alert.id);
+            }
+        }
+    </script>
+</body>
+
+</html>

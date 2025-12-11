@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devices - DEV-lldp-topomon</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .devices-container {
+            padding: 1.5rem;
+            height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-box input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            width: 300px;
+        }
+
+        .search-box select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+        }
+
+        .btn-primary {
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .devices-table-container {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .devices-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .devices-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-tertiary);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .devices-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .devices-table tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.managed {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.offline {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--danger);
+        }
+
+        .status-badge.unknown {
+            background: rgba(139, 148, 158, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .metric-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-bar-bg {
+            width: 60px;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .metric-bar-fill.normal {
+            background: var(--success);
+        }
+
+        .metric-bar-fill.warning {
+            background: var(--warning);
+        }
+
+        .metric-bar-fill.critical {
+            background: var(--danger);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-icon.danger:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-cancel {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌐</span>
+                <span class="logo-text">LLDP Topology Monitor</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-item">Topology</a>
+                <a href="/devices" class="nav-item active">Devices</a>
+                <a href="/alerts" class="nav-item">Alerts</a>
+                <a href="/groups" class="nav-item">Groups</a>
+                <a href="/settings" class="nav-item">Settings</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <div class="devices-container">
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search hostname or IP...">
+                    <select id="status-filter">
+                        <option value="">All Status</option>
+                        <option value="managed">Online</option>
+                        <option value="offline">Offline</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+                    <select id="vendor-filter">
+                        <option value="">All Vendors</option>
+                        <option value="cisco_ios">Cisco IOS</option>
+                        <option value="cisco_nxos">Cisco NX-OS</option>
+                        <option value="hp_aruba">HP/Aruba</option>
+                        <option value="fortinet">Fortinet</option>
+                        <option value="paloalto">Palo Alto</option>
+                        <option value="ruckus">Ruckus</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="btn-add-device">+ Add Device</button>
+            </div>
+
+            <div class="devices-table-container">
+                <table class="devices-table">
+                    <thead>
+                        <tr>
+                            <th>Hostname</th>
+                            <th>IP Address</th>
+                            <th>Vendor</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>CPU</th>
+                            <th>Memory</th>
+                            <th>Last Seen</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devices-tbody">
+                        <!-- Devices will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <!-- Pagination will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Add/Edit Device Modal -->
+        <div class="modal-overlay" id="device-modal" style="display: none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="modal-title">Add Device</h3>
+                    <button class="modal-close" id="modal-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="device-hostname">Hostname</label>
+                            <input type="text" id="device-hostname" placeholder="e.g. core-sw-01">
+                        </div>
+                        <div class="form-group">
+                            <label for="device-ip">IP Address</label>
+                            <input type="text" id="device-ip" placeholder="e.g. 192.168.1.1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="device-vendor">Vendor</label>
+                            <select id="device-vendor">
+                                <option value="">Auto Detect</option>
+                                <option value="cisco_ios">Cisco IOS</option>
+                                <option value="cisco_nxos">Cisco NX-OS</option>
+                                <option value="hp_aruba">HP/Aruba</option>
+                                <option value="fortinet">Fortinet</option>
+                                <option value="paloalto">Palo Alto</option>
+                                <option value="ruckus">Ruckus</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="device-type">Device Type</label>
+                            <select id="device-type">
+                                <option value="">Unknown</option>
+                                <option value="core">Core</option>
+                                <option value="distribution">Distribution</option>
+                                <option value="access">Access</option>
+                                <option value="router">Router</option>
+                                <option value="firewall">Firewall</option>
+                                <option value="ap">Access Point</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="device-community">SNMP Community</label>
+                        <input type="text" id="device-community" placeholder="e.g. public">
+                    </div>
+                    <div class="form-group">
+                        <label for="device-profile">Alert Profile</label>
+                        <select id="device-profile">
+                            <option value="">Default</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="device-autodiscover"> Auto-discover neighbors
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" id="btn-modal-cancel">Cancel</button>
+                    <button class="btn-primary" id="btn-modal-save">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let devices = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let editingDeviceId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDevices();
+            loadProfiles();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('btn-add-device').addEventListener('click', () => openModal());
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+            document.getElementById('btn-modal-save').addEventListener('click', saveDevice);
+
+            document.getElementById('search-input').addEventListener('input', debounce(loadDevices, 300));
+            document.getElementById('status-filter').addEventListener('change', loadDevices);
+            document.getElementById('vendor-filter').addEventListener('change', loadDevices);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        async function loadDevices() {
+            const search = document.getElementById('search-input').value;
+            const status = document.getElementById('status-filter').value;
+            const skip = (currentPage - 1) * 20;
+
+            try {
+                let url = `${API_BASE}/devices?skip=${skip}&limit=20`;
+                if (status) url += `&status=${status}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                devices = data.devices || [];
+                totalPages = Math.ceil(data.total / 20);
+
+                // Client-side search filter
+                if (search) {
+                    devices = devices.filter(d =>
+                        d.hostname.toLowerCase().includes(search.toLowerCase()) ||
+                        d.ip_address.includes(search)
+                    );
+                }
+
+                renderDevices();
+                renderPagination();
+            } catch (error) {
+                console.error('Error loading devices:', error);
+            }
+        }
+
+        function renderDevices() {
+            const tbody = document.getElementById('devices-tbody');
+
+            if (devices.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            No devices found. Click "Add Device" to add your first device.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = devices.map(d => `
+                <tr>
+                    <td><strong>${d.hostname}</strong></td>
+                    <td>${d.ip_address}</td>
+                    <td>${formatVendor(d.vendor)}</td>
+                    <td>${d.device_type || '-'}</td>
+                    <td><span class="status-badge ${d.status}">${d.status}</span></td>
+                    <td>${renderMetricBar(d.cpu_percent)}</td>
+                    <td>${renderMetricBar(d.memory_percent)}</td>
+                    <td>${formatLastSeen(d.last_seen)}</td>
+                    <td class="actions-cell">
+                        <button class="btn-icon" onclick="openModal(${d.id})" title="Edit">✏️</button>
+                        <button class="btn-icon danger" onclick="deleteDevice(${d.id})" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderMetricBar(value) {
+            if (value === null || value === undefined) return '<span style="color: var(--text-secondary)">N/A</span>';
+
+            let status = 'normal';
+            if (value >= 90) status = 'critical';
+            else if (value >= 70) status = 'warning';
+
+            return `
+                <div class="metric-bar">
+                    <div class="metric-bar-bg">
+                        <div class="metric-bar-fill ${status}" style="width: ${value}%"></div>
+                    </div>
+                    <span>${value.toFixed(0)}%</span>
+                </div>
+            `;
+        }
+
+        function formatVendor(vendor) {
+            const vendors = {
+                'cisco_ios': 'Cisco IOS',
+                'cisco_nxos': 'Cisco NX-OS',
+                'hp_aruba': 'HP/Aruba',
+                'fortinet': 'Fortinet',
+                'paloalto': 'Palo Alto',
+                'ruckus': 'Ruckus'
+            };
+            return vendors[vendor] || vendor || '-';
+        }
+
+        function formatLastSeen(dateStr) {
+            if (!dateStr) return 'Never';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = (now - date) / 1000;
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return date.toLocaleDateString();
+        }
+
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">←</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">→</button>`;
+
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadDevices();
+        }
+
+        async function loadProfiles() {
+            try {
+                const response = await fetch(`${API_BASE}/profiles`);
+                const profiles = await response.json();
+
+                const select = document.getElementById('device-profile');
+                profiles.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading profiles:', error);
+            }
+        }
+
+        function openModal(deviceId = null) {
+            editingDeviceId = deviceId;
+            const modal = document.getElementById('device-modal');
+            const title = document.getElementById('modal-title');
+
+            if (deviceId) {
+                const device = devices.find(d => d.id === deviceId);
+                title.textContent = 'Edit Device';
+                document.getElementById('device-hostname').value = device?.hostname || '';
+                document.getElementById('device-ip').value = device?.ip_address || '';
+                document.getElementById('device-vendor').value = device?.vendor || '';
+                document.getElementById('device-type').value = device?.device_type || '';
+                document.getElementById('device-community').value = device?.snmp_community || '';
+                document.getElementById('device-profile').value = device?.alert_profile_id || '';
+            } else {
+                title.textContent = 'Add Device';
+                document.getElementById('device-hostname').value = '';
+                document.getElementById('device-ip').value = '';
+                document.getElementById('device-vendor').value = '';
+                document.getElementById('device-type').value = '';
+                document.getElementById('device-community').value = '';
+                document.getElementById('device-profile').value = '';
+                document.getElementById('device-autodiscover').checked = false;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('device-modal').style.display = 'none';
+            editingDeviceId = null;
+        }
+
+        async function saveDevice() {
+            const data = {
+                hostname: document.getElementById('device-hostname').value,
+                ip_address: document.getElementById('device-ip').value,
+                vendor: document.getElementById('device-vendor').value || null,
+                device_type: document.getElementById('device-type').value || null,
+                snmp_community: document.getElementById('device-community').value,
+                alert_profile_id: document.getElementById('device-profile').value || null,
+                auto_discover: document.getElementById('device-autodiscover').checked
+            };
+
+            if (!data.hostname || !data.ip_address || !data.snmp_community) {
+                alert('Please fill in required fields: Hostname, IP, SNMP Community');
+                return;
+            }
+
+            try {
+                const url = editingDeviceId
+                    ? `${API_BASE}/devices/${editingDeviceId}`
+                    : `${API_BASE}/devices`;
+                const method = editingDeviceId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to save');
+                }
+
+                closeModal();
+                loadDevices();
+            } catch (error) {
+                console.error('Error saving device:', error);
+                alert('Failed to save device: ' + error.message);
+            }
+        }
+
+        async function deleteDevice(deviceId) {
+            if (!confirm('Are you sure you want to delete this device?')) return;
+
+            try {
+                await fetch(`${API_BASE}/devices/${deviceId}`, { method: 'DELETE' });
+                loadDevices();
+            } catch (error) {
+                console.error('Error deleting device:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

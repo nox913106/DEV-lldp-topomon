@@ -75,8 +75,33 @@ async def root():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 
+@app.get("/devices")
+async def devices_page():
+    """Serve the devices management page"""
+    return FileResponse(os.path.join(STATIC_DIR, "devices.html"))
+
+
+@app.get("/alerts")
+async def alerts_page():
+    """Serve the alerts dashboard page"""
+    return FileResponse(os.path.join(STATIC_DIR, "alerts.html"))
+
+
+@app.get("/groups")
+async def groups_page():
+    """Serve the groups management page"""
+    return FileResponse(os.path.join(STATIC_DIR, "groups.html"))
+
+
+@app.get("/settings")
+async def settings_page():
+    """Serve the settings page"""
+    return FileResponse(os.path.join(STATIC_DIR, "settings.html"))
+
+
 @app.get("/health")
 async def health():
     """Health check endpoint"""
     return {"status": "healthy"}
+
 
