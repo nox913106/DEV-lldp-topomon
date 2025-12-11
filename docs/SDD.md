@@ -1,8 +1,8 @@
 # DEV-lldp-topomon 系統設計文件 (SDD)
 
-**版本**：1.0  
-**日期**：2025-12-10  
-**狀態**：Draft
+**版本**：1.1  
+**日期**：2025-12-12  
+**狀態**：Active
 
 ---
 
@@ -16,6 +16,7 @@
 
 本系統為一個基於 LLDP/CDP 協定的網路拓撲監控系統，主要功能包括：
 - 網路設備自動發現
+- 階層式設備管理 (Core → Distribution → Access → AP)
 - 拓撲圖視覺化
 - 流量監控
 - 告警管理
@@ -25,6 +26,7 @@
 | 目標 | 說明 |
 |------|------|
 | **簡潔拓撲** | 每對設備只顯示一條合併的 link |
+| **階層視圖** | 群組視圖顯示成員設備 + 上層設備 |
 | **即時監控** | 顯示 link 即時流量使用率 |
 | **彈性告警** | 可自訂閾值 Profile 套用不同場景 |
 | **可擴展性** | 支援 600+ 設備規模 |
@@ -32,9 +34,10 @@
 
 ### 1.4 設計約束
 
-- **作業系統**：Ubuntu 22.04 LTS
+- **作業系統**：Ubuntu 22.04 LTS / Windows (venv)
+- **資料庫**：PostgreSQL (Docker) / SQLite (Local)
 - **SNMP 版本**：v2c
-- **支援廠商**：Cisco, HP, Aruba, FortiGate, Palo Alto
+- **支援廠商**：Cisco, HP, Aruba, FortiGate, Palo Alto, Ruckus, Juniper, Extreme
 - **獨立部署**：不依賴 LibreNMS
 
 ---

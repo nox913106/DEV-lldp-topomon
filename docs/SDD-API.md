@@ -24,6 +24,17 @@
 
 列出所有設備
 
+**查詢參數：**
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `skip` | int | 跳過筆數 (分頁) |
+| `limit` | int | 回傳筆數 (0=全部) |
+| `status` | string | 狀態過濾 (managed/offline/unknown) |
+| `vendor` | string | 廠牌過濾 |
+| `search` | string | 搜尋 hostname 或 IP (伺服器端) |
+| `sort_by` | string | 排序欄位 (hostname/ip_address/vendor/status/last_seen) |
+| `sort_order` | string | 排序方向 (asc/desc) |
+
 **Response:**
 ```json
 {
@@ -32,16 +43,19 @@
       "id": 1,
       "hostname": "Core-1",
       "ip_address": "10.0.0.1",
-      "vendor": "cisco",
-      "device_type": "switch",
-      "status": "online",
+      "vendor": "cisco_nxos",
+      "model": "N9K-C93180YC-EX",
+      "firmware_version": "10.2(5)",
+      "device_type": "core",
+      "parent_device_id": null,
+      "status": "managed",
       "cpu_percent": 45.2,
       "memory_percent": 68.5,
       "alert_profile": {"id": 1, "name": "Core Device"},
       "last_seen": "2025-12-10T23:50:00+08:00"
     }
   ],
-  "total": 1
+  "total": 50
 }
 ```
 
@@ -133,6 +147,11 @@
 
 取得活躍告警
 
+**查詢參數：**
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `device_id` | int | 過濾特定設備的告警 |
+
 **Response:**
 ```json
 {
@@ -141,13 +160,17 @@
       "id": 1,
       "alert_type": "link_high_utilization",
       "severity": "warning",
-      "device": {"id": 1, "hostname": "Core-1"},
-      "link": {"id": 1, "source": "Core-1", "target": "Dist-1"},
+      "hostname": "Core-1",
+      "ip_address": "10.0.0.1",
+      "device_id": 1,
+      "link_id": 1,
       "message": "Link utilization 78.5% exceeds warning threshold 70%",
       "current_value": 78.5,
       "threshold_value": 70,
+      "is_active": true,
       "triggered_at": "2025-12-10T23:45:00+08:00",
-      "duration_minutes": 5
+      "recovered_at": null,
+      "acknowledged_at": null
     }
   ],
   "total": 1

@@ -33,8 +33,11 @@ CREATE TABLE devices (
     hostname VARCHAR(255) NOT NULL UNIQUE,
     ip_address INET NOT NULL,
     vendor VARCHAR(100),
+    model VARCHAR(100),                    -- 設備型號 (e.g., WS-C3850-48P)
+    firmware_version VARCHAR(100),          -- 韌體版本
     device_type VARCHAR(50),
     snmp_community VARCHAR(255) NOT NULL,
+    parent_device_id INTEGER REFERENCES devices(id),  -- 上層設備 (階層關係)
     alert_profile_id INTEGER REFERENCES alert_profiles(id),
     status VARCHAR(50) DEFAULT 'unknown',
     cpu_percent FLOAT,
@@ -46,6 +49,17 @@ CREATE TABLE devices (
 );
 
 CREATE INDEX idx_devices_status ON devices(status);
+CREATE INDEX idx_devices_parent ON devices(parent_device_id);
+```
+
+**階層關係：**
+```
+Core Switch (parent_device_id = NULL)
+├── Distribution Switch (parent_device_id = core_id)
+│   ├── Access Switch (parent_device_id = dist_id)
+│   │   └── Access Point (parent_device_id = access_id)
+│   └── Access Switch
+└── Firewall (parent_device_id = core_id)
 ```
 
 ### 2.2 alert_profiles
