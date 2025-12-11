@@ -21,6 +21,7 @@ LLDP/CDP Topology Monitor - 網路拓撲監控系統
 - Aruba
 - Fortinet FortiGate
 - Palo Alto Networks
+- Ruckus (AP, SmartZone, Unleashed)
 
 ## 系統需求
 

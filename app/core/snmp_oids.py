@@ -54,6 +54,10 @@ VENDOR_OIDS = {
     "hp_aruba": {
         "cpu": "1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0",
         "memory": "1.3.6.1.4.1.11.2.14.11.5.1.1.2.1.1.1.5"
+    },
+    "ruckus": {
+        "cpu": "1.3.6.1.4.1.25053.1.2.2.1.1.1.15.1.0",  # Ruckus CPU util
+        "memory": "1.3.6.1.4.1.25053.1.2.2.1.1.1.15.2.0"  # Ruckus Memory util
     }
 }
 
@@ -68,7 +72,10 @@ VENDOR_PATTERNS = {
     "pan-os": "paloalto",
     "procurve": "hp_aruba",
     "aruba": "hp_aruba",
-    "hpe": "hp_aruba"
+    "hpe": "hp_aruba",
+    "ruckus": "ruckus",
+    "unleashed": "ruckus",
+    "smartzone": "ruckus"
 }
 
 
