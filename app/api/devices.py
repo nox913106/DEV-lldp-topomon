@@ -18,24 +18,62 @@ async def list_devices(
     skip: int = 0,
     limit: int = 100,
     status: str = None,
+    search: str = None,
+    vendor: str = None,
+    sort_by: str = "hostname",
+    sort_order: str = "asc",
     db: AsyncSession = Depends(get_db)
 ):
     """List all devices with optional filtering"""
+    from sqlalchemy import or_, asc, desc
+    
     query = select(Device)
     
+    # Apply filters
     if status:
         query = query.where(Device.status == status)
+    if vendor:
+        query = query.where(Device.vendor == vendor)
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            or_(
+                Device.hostname.ilike(search_pattern),
+                Device.ip_address.ilike(search_pattern)
+            )
+        )
     
-    query = query.offset(skip).limit(limit)
-    result = await db.execute(query)
-    devices = result.scalars().all()
+    # Apply sorting
+    sort_column = getattr(Device, sort_by, Device.hostname)
+    if sort_order.lower() == "desc":
+        query = query.order_by(desc(sort_column))
+    else:
+        query = query.order_by(asc(sort_column))
     
-    # Get total count
+    # Get total count before pagination
     count_query = select(func.count(Device.id))
     if status:
         count_query = count_query.where(Device.status == status)
+    if vendor:
+        count_query = count_query.where(Device.vendor == vendor)
+    if search:
+        count_query = count_query.where(
+            or_(
+                Device.hostname.ilike(f"%{search}%"),
+                Device.ip_address.ilike(f"%{search}%")
+            )
+        )
     count_result = await db.execute(count_query)
     total = count_result.scalar()
+    
+    # Apply pagination (skip limit=0 means ALL)
+    if limit > 0:
+        query = query.offset(skip).limit(limit)
+    else:
+        query = query.offset(skip)
+    
+    result = await db.execute(query)
+    devices = result.scalars().all()
     
     return DeviceListResponse(devices=devices, total=total)
 

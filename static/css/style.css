@@ -1,5 +1,6 @@
 /* DEV-lldp-topomon Styles */
 
+/* Dark Mode (Default) */
 :root {
     --bg-primary: #0d1117;
     --bg-secondary: #161b22;
@@ -13,6 +14,26 @@
     --warning: #d29922;
     --danger: #f85149;
     --elevated: #a371f7;
+    --svg-bg: #0d1117;
+    --link-label-color: #58a6ff;
+}
+
+/* Light Mode */
+[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eaeef2;
+    --text-primary: #1f2328;
+    --text-secondary: #656d76;
+    --accent: #0969da;
+    --accent-hover: #0550ae;
+    --border: #d0d7de;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --danger: #cf222e;
+    --elevated: #8250df;
+    --svg-bg: #f6f8fa;
+    --link-label-color: #0969da;
 }
 
 * {
@@ -153,7 +174,8 @@ body {
     gap: 0.5rem;
 }
 
-.control-select, .control-btn {
+.control-select,
+.control-btn {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
     background: var(--bg-tertiary);
@@ -206,7 +228,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Alerts Bar */
@@ -366,14 +390,43 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .link-label {
     font-size: 10px;
-    fill: var(--text-secondary);
+    fill: #58a6ff;
     text-anchor: middle;
+    font-weight: 500;
+}
+
+.link-util {
+    font-size: 9px;
+    fill: var(--text-secondary);
+}
+
+.node-vendor {
+    font-size: 10px;
+    fill: #8b949e;
+}
+
+.node-hostname {
+    font-size: 12px;
+    font-weight: bold;
+    fill: #e6edf3;
+}
+
+.node-ip {
+    font-size: 10px;
+    fill: #8b949e;
 }
 
 /* Detail Panel Content Styles */

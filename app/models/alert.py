@@ -1,8 +1,7 @@
 """
 Alert and AlertProfile models
 """
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -18,7 +17,7 @@ class AlertProfile(Base):
     
     # Thresholds as JSONB
     # {link_utilization: {warning, critical, recovery_buffer}, cpu: {...}, ...}
-    thresholds = Column(JSONB, nullable=False)
+    thresholds = Column(JSON, nullable=False)  # Changed to JSON for SQLite compat
     
     is_default = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -69,7 +68,7 @@ class AlertHistory(Base):
     alert_id = Column(Integer, ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False)
     event_type = Column(String(50))  # triggered, escalated, recovered, acknowledged
     event_time = Column(DateTime(timezone=True), server_default=func.now())
-    details = Column(JSONB)
+    details = Column(JSON)  # Changed to JSON for SQLite compat
     
     # Relationships
     alert = relationship("Alert", back_populates="history")

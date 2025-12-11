@@ -17,15 +17,21 @@
                 <span class="logo-text">LLDP Topology Monitor</span>
             </div>
             <nav class="nav">
-                <a href="/" class="nav-item active" data-view="topology">Topology</a>
-                <a href="/devices" class="nav-item" data-view="devices">Devices</a>
-                <a href="/alerts" class="nav-item" data-view="alerts">Alerts</a>
-                <a href="/groups" class="nav-item" data-view="groups">Groups</a>
-                <a href="/settings" class="nav-item" data-view="settings">Settings</a>
+                <a href="/" class="nav-item active" data-view="topology" data-i18n="topology">Topology</a>
+                <a href="/devices" class="nav-item" data-view="devices" data-i18n="devices">Devices</a>
+                <a href="/alerts" class="nav-item" data-view="alerts" data-i18n="alerts">Alerts</a>
+                <a href="/groups" class="nav-item" data-view="groups" data-i18n="groups">Groups</a>
+                <a href="/settings" class="nav-item" data-view="settings" data-i18n="settings">Settings</a>
             </nav>
             <div class="header-actions">
+                <select id="lang-select" class="control-select" style="width: auto; padding: 0.3rem 0.5rem;">
+                    <option value="en">EN</option>
+                    <option value="zh-TW">繁中</option>
+                    <option value="zh-CN">简中</option>
+                </select>
+                <button id="theme-toggle" class="control-btn" title="Toggle Dark/Light Mode">🌙</button>
                 <span class="status-indicator online"></span>
-                <span id="last-update">Last update: --</span>
+                <span id="last-update"><span data-i18n="lastUpdate">Last update</span>: --</span>
             </div>
         </header>
 
@@ -34,9 +40,9 @@
             <!-- Topology Controls -->
             <div class="topology-controls">
                 <div class="view-selector">
-                    <button class="view-btn active" data-view="overview">Overview</button>
-                    <button class="view-btn" data-view="full">Full Map</button>
-                    <button class="view-btn" data-view="group">Group View</button>
+                    <button class="view-btn active" data-view="overview" data-i18n="overview">Overview</button>
+                    <button class="view-btn" data-view="full" data-i18n="fullMap">Full Map</button>
+                    <button class="view-btn" data-view="group" data-i18n="groupView">Group View</button>
                 </div>
                 <div class="controls-right">
                     <select id="group-select" class="control-select" style="display: none;">
@@ -84,6 +90,7 @@
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
     <script src="/static/js/topology.js"></script>
     <script src="/static/js/app.js"></script>
 </body>

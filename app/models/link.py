@@ -1,8 +1,7 @@
 """
 Link models - Raw and merged link information
 """
-from sqlalchemy import Column, Integer, String, Float, BigInteger, Boolean, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, Float, BigInteger, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -48,7 +47,7 @@ class MergedLink(Base):
     
     # Port details as JSON array
     # [{local_port, remote_port, bandwidth_mbps, in_bps, out_bps}, ...]
-    port_details = Column(JSONB)
+    port_pairs = Column(JSON)  # Changed from port_details, use JSON for SQLite compat
     
     is_excluded = Column(Boolean, default=False)
     last_updated = Column(DateTime(timezone=True), server_default=func.now())

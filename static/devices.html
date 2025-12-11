@@ -81,6 +81,20 @@
             border-bottom: 1px solid var(--border);
         }
 
+        .devices-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .devices-table th.sortable:hover {
+            background: var(--bg-primary);
+        }
+
+        .sort-icon {
+            margin-left: 0.25rem;
+            opacity: 0.5;
+        }
+
         .devices-table td {
             padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
@@ -319,6 +333,15 @@
                         <option value="fortinet">Fortinet</option>
                         <option value="paloalto">Palo Alto</option>
                         <option value="ruckus">Ruckus</option>
+                        <option value="juniper">Juniper</option>
+                        <option value="extreme">Extreme</option>
+                    </select>
+                    <select id="page-size">
+                        <option value="10">10 / page</option>
+                        <option value="25" selected>25 / page</option>
+                        <option value="50">50 / page</option>
+                        <option value="100">100 / page</option>
+                        <option value="0">Show All</option>
                     </select>
                 </div>
                 <button class="btn-primary" id="btn-add-device">+ Add Device</button>
@@ -328,14 +351,21 @@
                 <table class="devices-table">
                     <thead>
                         <tr>
-                            <th>Hostname</th>
-                            <th>IP Address</th>
-                            <th>Vendor</th>
-                            <th>Type</th>
-                            <th>Status</th>
+                            <th class="sortable" data-sort="hostname" onclick="toggleSort('hostname')">Hostname <span
+                                    class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="ip_address" onclick="toggleSort('ip_address')">IP Address
+                                <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-sort="vendor" onclick="toggleSort('vendor')">Vendor <span
+                                    class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="device_type" onclick="toggleSort('device_type')">Type <span
+                                    class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="status" onclick="toggleSort('status')">Status <span
+                                    class="sort-icon">↕</span></th>
                             <th>CPU</th>
                             <th>Memory</th>
-                            <th>Last Seen</th>
+                            <th class="sortable" data-sort="last_seen" onclick="toggleSort('last_seen')">Last Seen <span
+                                    class="sort-icon">↕</span></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -423,7 +453,10 @@
         let devices = [];
         let currentPage = 1;
         let totalPages = 1;
+        let pageSize = 25;
         let editingDeviceId = null;
+        let sortBy = 'hostname';
+        let sortOrder = 'asc';
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDevices();
@@ -437,9 +470,14 @@
             document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
             document.getElementById('btn-modal-save').addEventListener('click', saveDevice);
 
-            document.getElementById('search-input').addEventListener('input', debounce(loadDevices, 300));
-            document.getElementById('status-filter').addEventListener('change', loadDevices);
-            document.getElementById('vendor-filter').addEventListener('change', loadDevices);
+            document.getElementById('search-input').addEventListener('input', debounce(() => { currentPage = 1; loadDevices(); }, 300));
+            document.getElementById('status-filter').addEventListener('change', () => { currentPage = 1; loadDevices(); });
+            document.getElementById('vendor-filter').addEventListener('change', () => { currentPage = 1; loadDevices(); });
+            document.getElementById('page-size').addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                loadDevices();
+            });
         }
 
         function debounce(func, wait) {
@@ -450,31 +488,54 @@
             };
         }
 
+        function toggleSort(column) {
+            if (sortBy === column) {
+                sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortBy = column;
+                sortOrder = 'asc';
+            }
+            updateSortIcons();
+            loadDevices();
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('.devices-table th.sortable').forEach(th => {
+                const icon = th.querySelector('.sort-icon');
+                const col = th.dataset.sort;
+                if (col === sortBy) {
+                    icon.textContent = sortOrder === 'asc' ? '↑' : '↓';
+                } else {
+                    icon.textContent = '↕';
+                }
+            });
+        }
+
         async function loadDevices() {
             const search = document.getElementById('search-input').value;
             const status = document.getElementById('status-filter').value;
-            const skip = (currentPage - 1) * 20;
+            const vendor = document.getElementById('vendor-filter').value;
+            const skip = (currentPage - 1) * (pageSize || 10000);
 
             try {
-                let url = `${API_BASE}/devices?skip=${skip}&limit=20`;
+                let url = `${API_BASE}/devices?skip=${skip}&limit=${pageSize}&sort_by=${sortBy}&sort_order=${sortOrder}`;
                 if (status) url += `&status=${status}`;
+                if (vendor) url += `&vendor=${vendor}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
 
                 const response = await fetch(url);
                 const data = await response.json();
 
                 devices = data.devices || [];
-                totalPages = Math.ceil(data.total / 20);
-
-                // Client-side search filter
-                if (search) {
-                    devices = devices.filter(d =>
-                        d.hostname.toLowerCase().includes(search.toLowerCase()) ||
-                        d.ip_address.includes(search)
-                    );
+                if (pageSize === 0) {
+                    totalPages = 1;
+                } else {
+                    totalPages = Math.ceil(data.total / pageSize) || 1;
                 }
 
                 renderDevices();
                 renderPagination();
+                updateSortIcons();
             } catch (error) {
                 console.error('Error loading devices:', error);
             }
@@ -496,7 +557,7 @@
 
             tbody.innerHTML = devices.map(d => `
                 <tr>
-                    <td><strong>${d.hostname}</strong></td>
+                    <td><a href="javascript:void(0)" onclick="showDeviceDetails(${d.id})" style="color: var(--accent); font-weight: 500; text-decoration: none;">${d.hostname}</a></td>
                     <td>${d.ip_address}</td>
                     <td>${formatVendor(d.vendor)}</td>
                     <td>${d.device_type || '-'}</td>
@@ -510,6 +571,116 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        async function showDeviceDetails(deviceId) {
+            try {
+                const response = await fetch(`${API_BASE}/devices/${deviceId}`);
+                const device = await response.json();
+
+                // Fetch alerts for this device
+                const alertsResponse = await fetch(`${API_BASE}/alerts?device_id=${deviceId}`);
+                const alertsData = await alertsResponse.json();
+                const alerts = alertsData.alerts || [];
+
+                let alertsHtml = '<p style="color: var(--text-secondary);">No alerts</p>';
+                if (alerts.length > 0) {
+                    alertsHtml = alerts.slice(0, 10).map(a => `
+                        <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid ${a.severity === 'critical' ? 'var(--danger)' : a.severity === 'warning' ? 'var(--warning)' : 'var(--accent)'};">
+                            <div style="font-weight: 500;">${formatAlertType(a.alert_type)}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">${a.message || 'No details'}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${a.is_active ? '🔴 Active' : '🟢 Resolved'} • ${formatLastSeen(a.triggered_at)}</div>
+                        </div>
+                    `).join('');
+                }
+
+                const detailHtml = `
+                    <div style="padding: 1rem;">
+                        <h2 style="margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            ${device.hostname}
+                            <span class="status-badge ${device.status}">${device.status}</span>
+                        </h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">IP Address</div>
+                                <div style="font-weight: 500;">${device.ip_address}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Vendor</div>
+                                <div style="font-weight: 500;">${formatVendor(device.vendor)}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Model</div>
+                                <div style="font-weight: 500;">${device.model || '-'}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Firmware</div>
+                                <div style="font-weight: 500;">${device.firmware_version || '-'}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Type</div>
+                                <div style="font-weight: 500;">${device.device_type || '-'}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Last Seen</div>
+                                <div style="font-weight: 500;">${formatLastSeen(device.last_seen)}</div>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin: 1rem 0 0.5rem 0;">Metrics</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">CPU</div>
+                                <div>${renderMetricBar(device.cpu_percent)}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-secondary); font-size: 0.875rem;">Memory</div>
+                                <div>${renderMetricBar(device.memory_percent)}</div>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin: 1rem 0 0.5rem 0;">Alerts (${alerts.length})</h3>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${alertsHtml}
+                        </div>
+                        
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                            <button class="btn-primary" onclick="openModal(${device.id})">Edit Device</button>
+                            <button class="btn-cancel" onclick="closeDeviceDetails()">Close</button>
+                        </div>
+                    </div>
+                `;
+
+                // Show in a modal or panel
+                let detailPanel = document.getElementById('device-detail-panel');
+                if (!detailPanel) {
+                    detailPanel = document.createElement('div');
+                    detailPanel.id = 'device-detail-panel';
+                    detailPanel.className = 'modal-overlay';
+                    detailPanel.innerHTML = '<div class="modal" style="width: 600px;"></div>';
+                    document.body.appendChild(detailPanel);
+                }
+                detailPanel.querySelector('.modal').innerHTML = detailHtml;
+                detailPanel.style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading device details:', error);
+            }
+        }
+
+        function closeDeviceDetails() {
+            const panel = document.getElementById('device-detail-panel');
+            if (panel) panel.style.display = 'none';
+        }
+
+        function formatAlertType(type) {
+            const types = {
+                'device_offline': 'Device Offline',
+                'cpu_high': 'High CPU',
+                'memory_high': 'High Memory',
+                'link_high_utilization': 'Link High Utilization'
+            };
+            return types[type] || type;
         }
 
         function renderMetricBar(value) {

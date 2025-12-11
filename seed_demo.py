@@ -1,0 +1,407 @@
+"""
+Seed script to create 50 demo devices with proper hierarchy
+"""
+import asyncio
+import sys
+import random
+sys.path.insert(0, '.')
+
+from app.db.database import async_session_maker, engine
+from app.models.device import Device, DeviceStatus
+from app.models.link import MergedLink
+from app.models.alert import Alert
+from app.models.group import DeviceGroup, DeviceGroupMember
+from datetime import datetime, timedelta
+from app.db.database import Base
+
+
+def random_ip(base):
+    return f"192.168.{base}.{random.randint(1, 254)}"
+
+def random_cpu():
+    return round(random.uniform(5, 95), 1)
+
+def random_memory():
+    return round(random.uniform(20, 90), 1)
+
+def random_utilization():
+    return round(random.uniform(5, 95), 1)
+
+
+# Device models by vendor
+DEVICE_MODELS = {
+    'cisco_ios': ['WS-C3850-48P', 'WS-C2960X-48FPS', 'C9300-48P', 'ISR4331', 'WS-C3650-24PS'],
+    'cisco_nxos': ['N9K-C93180YC-EX', 'N5K-C5672UP', 'N9K-C9336C-FX2'],
+    'hp_aruba': ['2930F-48G', '6300M-48G', '2540-24G', 'JL354A', 'JL322A'],
+    'fortinet': ['FG-100F', 'FG-200F', 'FG-60F', 'FG-400F'],
+    'paloalto': ['PA-3260', 'PA-5250', 'PA-820', 'PA-220'],
+    'ruckus': ['R750', 'R650', 'R550', 'T350', 'H550'],
+    'juniper': ['EX4300-48P', 'EX2300-24P', 'MX204', 'SRX340'],
+    'extreme': ['X465-48P', 'X440-G2-24p', 'X690-48x-2q'],
+}
+
+FIRMWARE_VERSIONS = {
+    'cisco_ios': ['15.2(7)E7', '16.12.8', '17.3.5a', '16.9.8'],
+    'cisco_nxos': ['10.2(5)', '9.3(9)', '10.1(2)'],
+    'hp_aruba': ['WC.16.11.0012', 'YC.16.10.0012', 'KB.16.09.0010'],
+    'fortinet': ['7.0.12', '6.4.14', '7.2.5'],
+    'paloalto': ['10.2.4-h4', '11.0.1', '10.1.9-h3'],
+    'ruckus': ['6.1.2.0.3001', '5.2.2.0.2056'],
+    'juniper': ['21.4R3.14', '22.2R2.17', '20.4R3-S6'],
+    'extreme': ['32.5.1', '31.7.2', '32.1.1'],
+}
+
+
+async def seed_demo_data():
+    """Create 50 demo devices with proper hierarchy"""
+    print("Dropping and recreating all tables...")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    
+    async with async_session_maker() as db:
+        print("Creating devices with hierarchy...")
+        
+        # =============================================
+        # LAYER 1: Core Switches (2)
+        # =============================================
+        core_switches = []
+        for i in range(1, 3):
+            device = Device(
+                hostname=f"core-sw-{str(i).zfill(2)}",
+                ip_address=f"192.168.1.{i}",
+                vendor="cisco_nxos",
+                model=random.choice(DEVICE_MODELS['cisco_nxos']),
+                firmware_version=random.choice(FIRMWARE_VERSIONS['cisco_nxos']),
+                device_type="core",
+                status=DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=random_cpu(),
+                memory_percent=random_memory(),
+                last_seen=datetime.utcnow() - timedelta(minutes=random.randint(1, 5)),
+                parent_device_id=None  # Core has no parent
+            )
+            core_switches.append(device)
+            db.add(device)
+        
+        await db.commit()
+        for d in core_switches:
+            await db.refresh(d)
+        print(f"  Created {len(core_switches)} core switches")
+        
+        # =============================================
+        # LAYER 2: Distribution Switches (6)
+        # Each dist connects to a core
+        # =============================================
+        dist_switches = []
+        for i in range(1, 7):
+            parent_core = core_switches[(i - 1) % 2]
+            vendor = random.choice(['cisco_ios', 'hp_aruba', 'juniper'])
+            device = Device(
+                hostname=f"dist-sw-{str(i).zfill(2)}",
+                ip_address=f"192.168.2.{i}",
+                vendor=vendor,
+                model=random.choice(DEVICE_MODELS[vendor]),
+                firmware_version=random.choice(FIRMWARE_VERSIONS[vendor]),
+                device_type="distribution",
+                status=DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=random_cpu(),
+                memory_percent=random_memory(),
+                last_seen=datetime.utcnow() - timedelta(minutes=random.randint(1, 5)),
+                parent_device_id=parent_core.id
+            )
+            dist_switches.append(device)
+            db.add(device)
+        
+        await db.commit()
+        for d in dist_switches:
+            await db.refresh(d)
+        print(f"  Created {len(dist_switches)} distribution switches")
+        
+        # =============================================
+        # LAYER 3: Access Switches (21) - 7 per floor
+        # Floor 1: access-sw-01 to 07 -> dist-sw-01, dist-sw-02
+        # Floor 2: access-sw-08 to 14 -> dist-sw-03, dist-sw-04
+        # Floor 3: access-sw-15 to 21 -> dist-sw-05, dist-sw-06
+        # =============================================
+        access_switches = []
+        floor_assignments = {}  # Track which floor each access switch belongs to
+        
+        for i in range(1, 22):
+            if i <= 7:
+                floor = 1
+                parent_dist = dist_switches[(i - 1) % 2]  # dist 0 or 1
+            elif i <= 14:
+                floor = 2
+                parent_dist = dist_switches[2 + ((i - 8) % 2)]  # dist 2 or 3
+            else:
+                floor = 3
+                parent_dist = dist_switches[4 + ((i - 15) % 2)]  # dist 4 or 5
+            
+            vendor = random.choice(['cisco_ios', 'hp_aruba', 'extreme'])
+            is_offline = random.random() < 0.05
+            
+            device = Device(
+                hostname=f"access-sw-{str(i).zfill(2)}",
+                ip_address=f"192.168.{10 + floor}.{i}",
+                vendor=vendor,
+                model=random.choice(DEVICE_MODELS[vendor]),
+                firmware_version=random.choice(FIRMWARE_VERSIONS[vendor]),
+                device_type="access",
+                status=DeviceStatus.OFFLINE if is_offline else DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=None if is_offline else random_cpu(),
+                memory_percent=None if is_offline else random_memory(),
+                last_seen=None if is_offline else datetime.utcnow() - timedelta(minutes=random.randint(1, 10)),
+                parent_device_id=parent_dist.id
+            )
+            access_switches.append(device)
+            floor_assignments[device.hostname] = floor
+            db.add(device)
+        
+        await db.commit()
+        for d in access_switches:
+            await db.refresh(d)
+        print(f"  Created {len(access_switches)} access switches")
+        
+        # =============================================
+        # LAYER 4: Access Points (15) - connected to access switches
+        # =============================================
+        aps = []
+        for i in range(1, 16):
+            parent_access = access_switches[(i - 1) % len(access_switches)]
+            
+            device = Device(
+                hostname=f"ap-{str(i).zfill(2)}",
+                ip_address=f"192.168.50.{i}",
+                vendor="ruckus",
+                model=random.choice(DEVICE_MODELS['ruckus']),
+                firmware_version=random.choice(FIRMWARE_VERSIONS['ruckus']),
+                device_type="ap",
+                status=DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=random_cpu(),
+                memory_percent=random_memory(),
+                last_seen=datetime.utcnow() - timedelta(minutes=random.randint(1, 10)),
+                parent_device_id=parent_access.id
+            )
+            aps.append(device)
+            db.add(device)
+        
+        await db.commit()
+        for d in aps:
+            await db.refresh(d)
+        print(f"  Created {len(aps)} access points")
+        
+        # =============================================
+        # Firewalls (3) - connected to core
+        # =============================================
+        firewalls = []
+        for i in range(1, 4):
+            parent_core = core_switches[(i - 1) % 2]
+            vendor = random.choice(['fortinet', 'paloalto'])
+            is_offline = random.random() < 0.1
+            
+            device = Device(
+                hostname=f"fw-{str(i).zfill(2)}",
+                ip_address=f"192.168.100.{i}",
+                vendor=vendor,
+                model=random.choice(DEVICE_MODELS[vendor]),
+                firmware_version=random.choice(FIRMWARE_VERSIONS[vendor]),
+                device_type="firewall",
+                status=DeviceStatus.OFFLINE if is_offline else DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=None if is_offline else random_cpu(),
+                memory_percent=None if is_offline else random_memory(),
+                last_seen=None if is_offline else datetime.utcnow() - timedelta(minutes=random.randint(1, 10)),
+                parent_device_id=parent_core.id
+            )
+            firewalls.append(device)
+            db.add(device)
+        
+        await db.commit()
+        for d in firewalls:
+            await db.refresh(d)
+        print(f"  Created {len(firewalls)} firewalls")
+        
+        # =============================================
+        # Routers (3) - connected to core
+        # =============================================
+        routers = []
+        for i in range(1, 4):
+            parent_core = core_switches[(i - 1) % 2]
+            vendor = random.choice(['cisco_ios', 'juniper'])
+            
+            device = Device(
+                hostname=f"rtr-{str(i).zfill(2)}",
+                ip_address=f"192.168.200.{i}",
+                vendor=vendor,
+                model=random.choice(DEVICE_MODELS[vendor]),
+                firmware_version=random.choice(FIRMWARE_VERSIONS[vendor]),
+                device_type="router",
+                status=DeviceStatus.MANAGED,
+                snmp_community="public",
+                cpu_percent=random_cpu(),
+                memory_percent=random_memory(),
+                last_seen=datetime.utcnow() - timedelta(minutes=random.randint(1, 5)),
+                parent_device_id=parent_core.id
+            )
+            routers.append(device)
+            db.add(device)
+        
+        await db.commit()
+        for d in routers:
+            await db.refresh(d)
+        print(f"  Created {len(routers)} routers")
+        
+        all_devices = core_switches + dist_switches + access_switches + aps + firewalls + routers
+        print(f"\nTotal devices: {len(all_devices)}")
+        
+        # =============================================
+        # Create MergedLinks based on parent-child relationships
+        # =============================================
+        print("\nCreating network links based on hierarchy...")
+        links = []
+        
+        for device in all_devices:
+            if device.parent_device_id:
+                # Create link from parent to child
+                bw = 10000 if device.device_type in ['distribution', 'firewall', 'router'] else 1000
+                link = MergedLink(
+                    device_a_id=device.parent_device_id,
+                    device_b_id=device.id,
+                    port_pairs=[{"a": f"Gi0/{random.randint(1,48)}", "b": "Gi0/1"}],
+                    total_bandwidth_mbps=bw,
+                    utilization_in_percent=random_utilization(),
+                    utilization_out_percent=random_utilization()
+                )
+                links.append(link)
+                db.add(link)
+        
+        # Core-to-core link
+        if len(core_switches) >= 2:
+            link = MergedLink(
+                device_a_id=core_switches[0].id,
+                device_b_id=core_switches[1].id,
+                port_pairs=[{"a": "Te1/1", "b": "Te1/1"}, {"a": "Te1/2", "b": "Te1/2"}],
+                total_bandwidth_mbps=80000,
+                utilization_in_percent=random_utilization(),
+                utilization_out_percent=random_utilization()
+            )
+            links.append(link)
+            db.add(link)
+        
+        await db.commit()
+        print(f"  Created {len(links)} links")
+        
+        # =============================================
+        # Create Groups
+        # =============================================
+        print("\nCreating groups...")
+        groups = [
+            DeviceGroup(name="Core Network", description="Core and distribution layer"),
+            DeviceGroup(name="Floor 1", description="Floor 1 access switches"),
+            DeviceGroup(name="Floor 2", description="Floor 2 access switches"),
+            DeviceGroup(name="Floor 3", description="Floor 3 access switches"),
+            DeviceGroup(name="Wireless", description="All access points"),
+            DeviceGroup(name="Security", description="Firewalls"),
+            DeviceGroup(name="WAN Edge", description="WAN routers"),
+        ]
+        
+        for group in groups:
+            db.add(group)
+        
+        await db.commit()
+        for group in groups:
+            await db.refresh(group)
+        
+        # Assign devices to groups
+        memberships = []
+        
+        # Core Network: core + distribution
+        for d in core_switches + dist_switches:
+            memberships.append(DeviceGroupMember(group_id=groups[0].id, device_id=d.id))
+        
+        # Floor 1, 2, 3 based on floor_assignments
+        for access in access_switches:
+            floor = floor_assignments.get(access.hostname, 1)
+            memberships.append(DeviceGroupMember(group_id=groups[floor].id, device_id=access.id))
+        
+        # Wireless
+        for ap in aps:
+            memberships.append(DeviceGroupMember(group_id=groups[4].id, device_id=ap.id))
+        
+        # Security
+        for fw in firewalls:
+            memberships.append(DeviceGroupMember(group_id=groups[5].id, device_id=fw.id))
+        
+        # WAN Edge
+        for rtr in routers:
+            memberships.append(DeviceGroupMember(group_id=groups[6].id, device_id=rtr.id))
+        
+        for m in memberships:
+            db.add(m)
+        
+        await db.commit()
+        print(f"  Created {len(groups)} groups with {len(memberships)} memberships")
+        
+        # =============================================
+        # Create Alerts
+        # =============================================
+        print("\nCreating demo alerts...")
+        alerts = []
+        
+        # Offline device alerts
+        for device in all_devices:
+            if device.status == DeviceStatus.OFFLINE:
+                alerts.append(Alert(
+                    device_id=device.id,
+                    alert_type="device_offline",
+                    severity="critical",
+                    message=f"Device {device.hostname} is offline",
+                    is_active=True,
+                    triggered_at=datetime.utcnow() - timedelta(hours=random.randint(1, 24))
+                ))
+        
+        # High CPU alerts
+        for device in all_devices:
+            if device.cpu_percent and device.cpu_percent > 70:
+                severity = "critical" if device.cpu_percent > 90 else "warning"
+                alerts.append(Alert(
+                    device_id=device.id,
+                    alert_type="cpu_high",
+                    severity=severity,
+                    message=f"CPU utilization is {device.cpu_percent:.1f}%",
+                    current_value=device.cpu_percent,
+                    threshold_value=70 if severity == "warning" else 90,
+                    is_active=True,
+                    triggered_at=datetime.utcnow() - timedelta(minutes=random.randint(10, 60))
+                ))
+        
+        for alert in alerts:
+            db.add(alert)
+        
+        await db.commit()
+        print(f"  Created {len(alerts)} alerts")
+        
+        # =============================================
+        # Summary
+        # =============================================
+        print("\n" + "=" * 60)
+        print("✅ Demo data with HIERARCHY created successfully!")
+        print("=" * 60)
+        print(f"\n📊 Device Hierarchy:")
+        print(f"   Core ({len(core_switches)}) → Distribution ({len(dist_switches)}) → Access ({len(access_switches)}) → AP ({len(aps)})")
+        print(f"   Core → Firewall ({len(firewalls)})")
+        print(f"   Core → Router ({len(routers)})")
+        print(f"\n📁 Floor Assignments:")
+        print(f"   Floor 1: access-sw-01 to access-sw-07 (7 devices)")
+        print(f"   Floor 2: access-sw-08 to access-sw-14 (7 devices)")
+        print(f"   Floor 3: access-sw-15 to access-sw-21 (7 devices)")
+        print(f"\n🔗 Links: {len(links)} (based on parent-child relationships)")
+        print(f"⚠️  Alerts: {len(alerts)}")
+
+
+if __name__ == "__main__":
+    asyncio.run(seed_demo_data())

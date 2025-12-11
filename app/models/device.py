@@ -25,8 +25,13 @@ class Device(Base):
     hostname = Column(String(255), unique=True, nullable=False, index=True)
     ip_address = Column(String(45), nullable=False, index=True)
     vendor = Column(String(100))
+    model = Column(String(100))  # Device model (e.g., "WS-C3850-48P")
+    firmware_version = Column(String(100))  # Firmware/OS version
     device_type = Column(String(50))  # router, switch, firewall
     snmp_community = Column(String(255), nullable=False)
+    
+    # Parent device for hierarchy (e.g., access switch -> distribution -> core)
+    parent_device_id = Column(Integer, ForeignKey("devices.id"), nullable=True, index=True)
     
     # Alert profile reference
     alert_profile_id = Column(Integer, ForeignKey("alert_profiles.id"))
@@ -43,6 +48,7 @@ class Device(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
+    parent = relationship("Device", remote_side=[id], backref="children", foreign_keys=[parent_device_id])
     alert_profile = relationship("AlertProfile", back_populates="devices")
     raw_links = relationship("RawLink", back_populates="local_device", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="device", cascade="all, delete-orphan")

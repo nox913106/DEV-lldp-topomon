@@ -455,19 +455,22 @@
             }
 
             container.innerHTML = filtered.map(a => `
-                <div class="alert-card ${a.severity}">
+                <div class="alert-card ${a.severity}" onclick="window.location.href='/devices?id=${a.device_id}'">
                     <div class="alert-header">
                         <span class="alert-type">
                             ${getAlertIcon(a.alert_type)} ${formatAlertType(a.alert_type)}
                         </span>
                         <span class="alert-severity ${a.severity}">${a.severity.toUpperCase()}</span>
                     </div>
+                    <div class="alert-device" style="font-weight: 500; margin-bottom: 0.25rem;">
+                        🖥️ ${a.hostname || 'Unknown'} <span style="color: var(--text-secondary); font-weight: normal;">(${a.ip_address || '-'})</span>
+                    </div>
                     <div class="alert-message">${a.message || 'No details'}</div>
                     <div class="alert-meta">
                         <span>⏰ ${formatTime(a.triggered_at)}</span>
                         <div class="alert-actions">
                             ${a.is_active && !a.acknowledged_at ?
-                    `<button class="btn-ack" onclick="acknowledgeAlert(${a.id})">Acknowledge</button>` :
+                    `<button class="btn-ack" onclick="event.stopPropagation(); acknowledgeAlert(${a.id})">Acknowledge</button>` :
                     a.acknowledged_at ? `<span>✓ Ack'd</span>` : ''
                 }
                         </div>

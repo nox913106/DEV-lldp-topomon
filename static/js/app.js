@@ -32,6 +32,32 @@ class App {
     }
 
     setupEventListeners() {
+        // Initialize i18n
+        if (window.i18n) {
+            i18n.init();
+            const langSelect = document.getElementById('lang-select');
+            if (langSelect) {
+                langSelect.value = i18n.currentLang;
+                langSelect.addEventListener('change', (e) => {
+                    i18n.setLanguage(e.target.value);
+                });
+            }
+        }
+
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            this.setTheme(savedTheme);
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                this.setTheme(newTheme);
+            });
+        }
+
         // View selector buttons
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -62,6 +88,22 @@ class App {
         });
     }
 
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+
+        // Update toggle button icon
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.textContent = theme === 'light' ? '☀️' : '🌙';
+        }
+
+        // Update topology colors if needed
+        if (this.topology) {
+            this.topology.updateTheme(theme);
+        }
+    }
+
     async setView(view) {
         // Update active button
         document.querySelectorAll('.view-btn').forEach(btn => {
@@ -75,7 +117,18 @@ class App {
         }
 
         this.currentView = view;
-        await this.loadTopology(view);
+
+        // For group view, get selected group ID
+        if (view === 'group') {
+            const groupSelect = document.getElementById('group-select');
+            const groupId = groupSelect?.value;
+            if (groupId) {
+                await this.loadTopology(view, parseInt(groupId));
+            }
+            // Don't load if no group selected yet
+        } else {
+            await this.loadTopology(view);
+        }
     }
 
     async loadTopology(view = this.currentView, groupId = null) {
@@ -195,12 +248,56 @@ class App {
             ${node.alert_count > 0 ? `
             <div class="detail-section">
                 <h4>Alerts (${node.alert_count})</h4>
-                <p style="color: var(--danger);">This device has active alerts</p>
+                <div id="device-alerts-list" style="max-height: 200px; overflow-y: auto;">
+                    <p style="color: var(--text-secondary);">Loading alerts...</p>
+                </div>
             </div>
             ` : ''}
+            <div class="detail-section" style="margin-top: 1rem;">
+                <a href="/devices?id=${node.id}" class="control-btn" style="display: block; text-align: center; text-decoration: none;">
+                    View Full Details →
+                </a>
+            </div>
         `;
 
         panel.style.display = 'flex';
+
+        // Load alerts for this device if any
+        if (node.alert_count > 0) {
+            this.loadDeviceAlerts(node.id);
+        }
+    }
+
+    async loadDeviceAlerts(deviceId) {
+        try {
+            const response = await fetch(`${this.apiBase}/alerts?device_id=${deviceId}&is_active=true`);
+            const data = await response.json();
+            const alertsList = document.getElementById('device-alerts-list');
+
+            if (alertsList && data.alerts.length > 0) {
+                alertsList.innerHTML = data.alerts.map(a => `
+                    <div style="padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid ${a.severity === 'critical' ? 'var(--danger)' : 'var(--warning)'};">
+                        <div style="font-weight: 500; font-size: 0.875rem;">${this.formatAlertType(a.alert_type)}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${a.message || 'No details'}</div>
+                        ${a.current_value ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">Value: ${a.current_value.toFixed(1)} (threshold: ${a.threshold_value || '-'})</div>` : ''}
+                    </div>
+                `).join('');
+            } else if (alertsList) {
+                alertsList.innerHTML = '<p style="color: var(--text-secondary);">No active alerts</p>';
+            }
+        } catch (error) {
+            console.error('Error loading device alerts:', error);
+        }
+    }
+
+    formatAlertType(type) {
+        const types = {
+            'device_offline': 'Device Offline',
+            'cpu_high': 'High CPU',
+            'memory_high': 'High Memory',
+            'link_high_utilization': 'Link High Utilization'
+        };
+        return types[type] || type;
     }
 
     showLinkDetails(link) {

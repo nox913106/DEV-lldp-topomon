@@ -41,20 +41,54 @@ async def get_topology(
     
     # Get all devices based on view type
     if view == "overview":
-        # Only Core and Distribution devices
+        # Show Core, Distribution, and Firewall in overview
         query = select(Device).where(
-            Device.device_type.in_(["core", "router", "distribution", "dist"])
+            Device.device_type.in_(["core", "router", "distribution", "dist", "firewall"])
         )
+        result = await db.execute(query)
+        devices = result.scalars().all()
+        # If no core/dist devices, show all devices
+        if not devices:
+            result = await db.execute(select(Device))
+            devices = result.scalars().all()
     elif view == "group" and group_id:
-        # Devices in specific group + their upstream devices
-        # TODO: Implement group filtering with upstream
-        query = select(Device)
+        # Get devices in specific group + their parent devices (hierarchy-based)
+        from app.models.group import DeviceGroupMember
+        member_query = select(DeviceGroupMember.device_id).where(
+            DeviceGroupMember.group_id == group_id
+        )
+        member_result = await db.execute(member_query)
+        group_device_ids = [row[0] for row in member_result.fetchall()]
+        
+        if group_device_ids:
+            # Get group member devices
+            result = await db.execute(
+                select(Device).where(Device.id.in_(group_device_ids))
+            )
+            group_devices = result.scalars().all()
+            
+            # Find parent devices using parent_device_id (hierarchy navigation)
+            parent_ids = set()
+            for device in group_devices:
+                if device.parent_device_id:
+                    parent_ids.add(device.parent_device_id)
+            
+            # Get parent devices (1 level up)
+            all_device_ids = set(group_device_ids) | parent_ids
+            
+            query = select(Device).where(Device.id.in_(all_device_ids))
+            result = await db.execute(query)
+            devices = result.scalars().all()
+        else:
+            devices = []
+            group_device_ids = []
     else:
         # Full map - all devices
         query = select(Device)
+        result = await db.execute(query)
+        devices = result.scalars().all()
+        group_device_ids = None  # Not a group view
     
-    result = await db.execute(query)
-    devices = result.scalars().all()
     device_ids = [d.id for d in devices]
     
     # Get alert counts per device
@@ -87,22 +121,37 @@ async def get_topology(
     # Get merged links between these devices
     links = []
     if len(device_ids) >= 2:
-        link_query = select(MergedLink).where(
-            MergedLink.device_a_id.in_(device_ids),
-            MergedLink.device_b_id.in_(device_ids),
-            MergedLink.is_excluded == False
-        )
+        # For group view, only show links where at least one end is a group member
+        if group_device_ids is not None and len(group_device_ids) > 0:
+            # Links where at least one device is in the group
+            from sqlalchemy import or_
+            link_query = select(MergedLink).where(
+                MergedLink.device_a_id.in_(device_ids),
+                MergedLink.device_b_id.in_(device_ids),
+                MergedLink.is_excluded == False,
+                or_(
+                    MergedLink.device_a_id.in_(group_device_ids),
+                    MergedLink.device_b_id.in_(group_device_ids)
+                )
+            )
+        else:
+            # Full view - show all links between devices
+            link_query = select(MergedLink).where(
+                MergedLink.device_a_id.in_(device_ids),
+                MergedLink.device_b_id.in_(device_ids),
+                MergedLink.is_excluded == False
+            )
         link_result = await db.execute(link_query)
         merged_links = link_result.scalars().all()
         
         for link in merged_links:
-            # Parse port details
+            # Parse port details from port_pairs
             port_details = []
-            if link.port_details:
-                for pd in link.port_details:
+            if link.port_pairs:
+                for pd in link.port_pairs:
                     port_details.append(PortDetail(
-                        local_port=pd.get("local_port", ""),
-                        remote_port=pd.get("remote_port", ""),
+                        local_port=pd.get("a", pd.get("local_port", "")),
+                        remote_port=pd.get("b", pd.get("remote_port", "")),
                         bandwidth_mbps=pd.get("bandwidth_mbps", 0),
                         in_bps=pd.get("in_bps"),
                         out_bps=pd.get("out_bps")

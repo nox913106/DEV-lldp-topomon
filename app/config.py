@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     app_debug: bool = False
     app_log_level: str = "INFO"
     
-    # Database
-    database_url: str = "postgresql+asyncpg://topomon:topomon@localhost:5432/topomon"
+    # Database (默認使用 SQLite 方便本地測試)
+    database_url: str = "sqlite+aiosqlite:///./topomon.db"
     
     # Redis
     redis_url: str = "redis://localhost:6379"
