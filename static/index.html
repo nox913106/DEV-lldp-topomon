@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEV-lldp-topomon</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌐</span>
+                <span class="logo-text">LLDP Topology Monitor</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-item active" data-view="topology">Topology</a>
+                <a href="/devices" class="nav-item" data-view="devices">Devices</a>
+                <a href="/alerts" class="nav-item" data-view="alerts">Alerts</a>
+                <a href="/groups" class="nav-item" data-view="groups">Groups</a>
+                <a href="/settings" class="nav-item" data-view="settings">Settings</a>
+            </nav>
+            <div class="header-actions">
+                <span class="status-indicator online"></span>
+                <span id="last-update">Last update: --</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topology Controls -->
+            <div class="topology-controls">
+                <div class="view-selector">
+                    <button class="view-btn active" data-view="overview">Overview</button>
+                    <button class="view-btn" data-view="full">Full Map</button>
+                    <button class="view-btn" data-view="group">Group View</button>
+                </div>
+                <div class="controls-right">
+                    <select id="group-select" class="control-select" style="display: none;">
+                        <option value="">Select Group...</option>
+                    </select>
+                    <button id="refresh-btn" class="control-btn">🔄 Refresh</button>
+                    <button id="fit-btn" class="control-btn">⊡ Fit</button>
+                </div>
+            </div>
+
+            <!-- Topology Container -->
+            <div class="topology-container">
+                <svg id="topology-svg"></svg>
+
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="loading-overlay" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading topology...</p>
+                </div>
+            </div>
+
+            <!-- Active Alerts Bar -->
+            <div class="alerts-bar" id="alerts-bar">
+                <div class="alerts-bar-header">
+                    <span class="alerts-icon">⚠️</span>
+                    <span class="alerts-title">Active Alerts</span>
+                    <span class="alerts-count" id="alerts-count">0</span>
+                </div>
+                <div class="alerts-list" id="alerts-list">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Device/Link Detail Panel -->
+        <aside class="detail-panel" id="detail-panel" style="display: none;">
+            <div class="panel-header">
+                <h3 id="panel-title">Details</h3>
+                <button class="panel-close" id="panel-close">×</button>
+            </div>
+            <div class="panel-content" id="panel-content">
+                <!-- Detail content will be populated here -->
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/static/js/topology.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

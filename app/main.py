@@ -4,8 +4,10 @@ FastAPI main application entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import logging
+import os
 
 from app.config import get_settings
 from app.db.database import init_db
@@ -19,6 +21,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
+
+# Get static files path
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 
 
 @asynccontextmanager
@@ -60,18 +65,18 @@ app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["Alert Prof
 app.include_router(groups.router, prefix="/api/v1/groups", tags=["Device Groups"])
 app.include_router(discovery.router, prefix="/api/v1/discovery", tags=["Discovery"])
 
+# Mount static files
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
-    return {
-        "name": settings.app_name,
-        "version": "1.0.0",
-        "status": "running"
-    }
+    """Serve the main web interface"""
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 
 @app.get("/health")
 async def health():
     """Health check endpoint"""
     return {"status": "healthy"}
+
