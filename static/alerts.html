@@ -178,6 +178,129 @@
             color: var(--warning);
         }
 
+        /* Root Cause Tags */
+        .root-cause-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #f85149 0%, #ff7b00 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .suppressed-tag {
+            display: inline-block;
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--warning);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-card.root-cause {
+            border-left: 4px solid #f85149;
+            box-shadow: 0 0 10px rgba(248, 81, 73, 0.3);
+        }
+
+        .alert-card.suppressed {
+            opacity: 0.85;
+            border-left: 4px solid var(--warning);
+        }
+
+        /* Alert Grouping Styles */
+        .alert-group {
+            margin-bottom: 1rem;
+        }
+
+        .root-cause-group .alert-card {
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+
+        .affected-devices-summary {
+            background: var(--bg-tertiary);
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-top: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: background 0.2s;
+        }
+
+        .affected-devices-summary:hover {
+            background: var(--bg-secondary);
+        }
+
+        .affected-devices-summary .expand-icon {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .affected-devices-summary.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .affected-preview {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-left: auto;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .affected-devices-list {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .affected-device-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+
+        .affected-device-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .offline-dot {
+            color: var(--danger);
+            font-size: 0.625rem;
+        }
+
         .alert-message {
             color: var(--text-secondary);
             font-size: 0.875rem;
@@ -291,7 +414,123 @@
             font-size: 3rem;
             margin-bottom: 1rem;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #prompt-modal,
+        #confirm-modal {
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            max-width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Alert Detail Modal */
+        .alert-detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-detail-section h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        .device-info-box {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .ack-history-item {
+            background: rgba(46, 160, 67, 0.15);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ack-history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .ack-history-reason {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            padding: 0.5rem;
+            font-style: italic;
+        }
     </style>
+    <script src="/static/js/i18n.js"></script>
+    <script src="/static/js/theme.js"></script>
 </head>
 
 <body>
@@ -303,11 +542,11 @@
                 <span class="logo-text">LLDP Topology Monitor</span>
             </div>
             <nav class="nav">
-                <a href="/" class="nav-item">Topology</a>
-                <a href="/devices" class="nav-item">Devices</a>
-                <a href="/alerts" class="nav-item active">Alerts</a>
-                <a href="/groups" class="nav-item">Groups</a>
-                <a href="/settings" class="nav-item">Settings</a>
+                <a href="/" class="nav-item" data-i18n="topology">Topology</a>
+                <a href="/devices" class="nav-item" data-i18n="devices">Devices</a>
+                <a href="/alerts" class="nav-item active" data-i18n="alerts">Alerts</a>
+                <a href="/groups" class="nav-item" data-i18n="groups">Groups</a>
+                <a href="/settings" class="nav-item" data-i18n="settings">Settings</a>
             </nav>
         </header>
 
@@ -319,28 +558,28 @@
                     <div class="stat-icon critical">🔴</div>
                     <div class="stat-info">
                         <h3 id="stat-critical">0</h3>
-                        <p>Critical</p>
+                        <p data-i18n="critical">Critical</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon warning">🟡</div>
                     <div class="stat-info">
                         <h3 id="stat-warning">0</h3>
-                        <p>Warning</p>
+                        <p data-i18n="warning">Warning</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon info">🔵</div>
                     <div class="stat-info">
                         <h3 id="stat-info">0</h3>
-                        <p>Info</p>
+                        <p data-i18n="info">Info</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon success">✅</div>
                     <div class="stat-info">
                         <h3 id="stat-resolved">0</h3>
-                        <p>Resolved Today</p>
+                        <p data-i18n="resolvedToday">Resolved Today</p>
                     </div>
                 </div>
             </div>
@@ -351,12 +590,13 @@
                 <div class="alerts-list-container">
                     <div class="alerts-list-header">
                         <div class="filter-tabs">
-                            <button class="filter-tab active" data-filter="active">Active</button>
-                            <button class="filter-tab" data-filter="all">All</button>
-                            <button class="filter-tab" data-filter="critical">Critical</button>
-                            <button class="filter-tab" data-filter="warning">Warning</button>
+                            <button class="filter-tab active" data-filter="active"
+                                data-i18n="activeAlerts">Active</button>
+                            <button class="filter-tab" data-filter="all" data-i18n="all">All</button>
+                            <button class="filter-tab" data-filter="critical" data-i18n="critical">Critical</button>
+                            <button class="filter-tab" data-filter="warning" data-i18n="warning">Warning</button>
                         </div>
-                        <button class="btn-ack" id="btn-ack-all">Acknowledge All</button>
+                        <button class="btn-ack" id="btn-ack-all" data-i18n="acknowledgeAll">Acknowledge All</button>
                     </div>
                     <div class="alerts-list" id="alerts-list">
                         <!-- Alerts will be loaded here -->
@@ -366,7 +606,7 @@
                 <!-- History Panel -->
                 <div class="history-panel">
                     <div class="history-header">
-                        <h3>📜 Recent Activity</h3>
+                        <h3>📜 <span data-i18n="recentActivity">Recent Activity</span></h3>
                     </div>
                     <div class="history-list" id="history-list">
                         <!-- History will be loaded here -->
@@ -376,12 +616,174 @@
         </div>
     </div>
 
+    <!-- Custom Prompt Modal -->
+    <div id="prompt-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="prompt-modal-title">Input</h3>
+                <button class="modal-close" onclick="resolvePrompt(null)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="prompt-modal-message" style="margin-bottom: 1rem;"></p>
+                <input type="text" id="prompt-modal-input"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); border-radius: 6px;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="resolvePrompt(null)" data-i18n="cancel">Cancel</button>
+                <button class="btn-primary" onclick="resolvePrompt(document.getElementById('prompt-modal-input').value)"
+                    data-i18n="confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirm</h3>
+                <button class="modal-close" onclick="resolveConfirm(false)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="resolveConfirm(false)" data-i18n="cancel">Cancel</button>
+                <button class="btn-primary" onclick="resolveConfirm(true)" data-i18n="confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acknowledge Modal -->
+    <div id="ack-modal" class="modal-overlay">
+        <div class="modal" style="width: 450px;">
+            <div class="modal-header">
+                <h3 id="ack-modal-title" data-i18n="acknowledgeAlert">確認告警</h3>
+                <button class="modal-close" onclick="closeAckModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="ack-modal-desc" style="margin-bottom: 1rem; color: var(--text-secondary);"
+                    data-i18n="enterReason">請輸入確認原因：</p>
+                <textarea id="ack-reason" rows="3"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); border-radius: 6px; resize: vertical;"
+                    placeholder="輸入原因..."
+                    oninput="document.getElementById('ack-error').style.display='none'"></textarea>
+
+                <!-- Suppress Duration Selector -->
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 6px;">
+                    <p style="margin-bottom: 0.75rem; font-weight: 500; color: var(--text-primary);">⏸️ <span
+                            data-i18n="suppressNotifications">暫停推播</span></p>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                            <input type="radio" name="suppress-type" value="duration"
+                                onchange="toggleSuppressDuration()">
+                            <span data-i18n="customDuration">自訂時長</span>
+                        </label>
+                        <input type="number" id="suppress-value" min="1" value="30"
+                            style="width: 60px; padding: 0.25rem; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px;"
+                            disabled>
+                        <select id="suppress-unit"
+                            style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px;"
+                            disabled>
+                            <option value="minutes" data-i18n="minutes">分鐘</option>
+                            <option value="hours" data-i18n="hours">小時</option>
+                            <option value="days" data-i18n="days">天</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                            <input type="radio" name="suppress-type" value="until_resolved"
+                                onchange="toggleSuppressDuration()">
+                            <span data-i18n="untilResolved">直到解決</span>
+                        </label>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                            <input type="radio" name="suppress-type" value="none" checked
+                                onchange="toggleSuppressDuration()">
+                            <span data-i18n="noSuppress">不暫停</span>
+                        </label>
+                    </div>
+                </div>
+
+                <p id="ack-error" style="color: var(--danger); margin-top: 0.5rem; display: none;"
+                    data-i18n="reasonRequired">請輸入原因</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeAckModal()" data-i18n="cancel">Cancel</button>
+                <button class="btn-primary" onclick="submitAcknowledge()" data-i18n="confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Detail Modal -->
+    <div id="alert-detail-modal" class="modal-overlay" onclick="closeDetailModal(event)">
+        <div class="modal" style="width: 600px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="detail-modal-title">🔥 告警詳情</h3>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detail-modal-body">
+                <!-- Content will be populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDetailModal()">關閉</button>
+                <button class="btn-ack" id="btn-ack-from-detail" onclick="acknowledgeFromDetail()"
+                    style="display: none;">✅ 確認告警</button>
+                <button class="btn-secondary" id="btn-add-note" onclick="addAckNote()" style="display: none;">➕
+                    新增記錄</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api/v1';
         let alerts = [];
         let currentFilter = 'active';
 
+        // Custom prompt/confirm functions
+        let promptResolve = null;
+        let confirmResolve = null;
+
+        function customPrompt(message, title = '輸入') {
+            return new Promise((resolve) => {
+                promptResolve = resolve;
+                document.getElementById('prompt-modal-title').textContent = title;
+                document.getElementById('prompt-modal-message').textContent = message;
+                document.getElementById('prompt-modal-input').value = '';
+                document.getElementById('prompt-modal').classList.add('active');
+                document.getElementById('prompt-modal-input').focus();
+            });
+        }
+
+        function resolvePrompt(value) {
+            document.getElementById('prompt-modal').classList.remove('active');
+            if (promptResolve) {
+                promptResolve(value);
+                promptResolve = null;
+            }
+        }
+
+        function customConfirm(message, title = '確認') {
+            return new Promise((resolve) => {
+                confirmResolve = resolve;
+                document.getElementById('confirm-modal-title').textContent = title;
+                document.getElementById('confirm-modal-message').textContent = message;
+                document.getElementById('confirm-modal').classList.add('active');
+            });
+        }
+
+        function resolveConfirm(value) {
+            document.getElementById('confirm-modal').classList.remove('active');
+            if (confirmResolve) {
+                confirmResolve(value);
+                confirmResolve = null;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize i18n first
+            i18n.init();
+
             loadAlerts();
             setupEventListeners();
 
@@ -400,6 +802,17 @@
             });
 
             document.getElementById('btn-ack-all').addEventListener('click', acknowledgeAll);
+
+            // Event delegation for alerts list
+            document.getElementById('alerts-list').addEventListener('click', (e) => {
+                // Handle card click to open detail (btn-ack now uses onclick)
+
+                // Handle card click to open detail
+                const card = e.target.closest('.alert-card');
+                if (card && card.dataset.alertId) {
+                    openDetailModal(parseInt(card.dataset.alertId, 10));
+                }
+            });
         }
 
         async function loadAlerts() {
@@ -448,35 +861,111 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="icon">🎉</div>
-                        <p>No alerts! Everything is running smoothly.</p>
+                        <p>${i18n.t('noAlerts')}</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filtered.map(a => `
-                <div class="alert-card ${a.severity}" onclick="window.location.href='/devices?id=${a.device_id}'">
+            // 分離根因告警和受影響告警
+            const rootCauseAlerts = filtered.filter(a => a.details?.is_root_cause);
+            const suppressedAlerts = filtered.filter(a => a.details?.is_suppressed);
+            const normalAlerts = filtered.filter(a => !a.details?.is_root_cause && !a.details?.is_suppressed);
+
+            // 建立根因 → 受影響設備的映射
+            const rootCauseGroups = {};
+            rootCauseAlerts.forEach(rc => {
+                const hostname = alerts.find(a => a.id === rc.id)?.hostname ||
+                    rc.message?.match(/Device ([^\s]+)/)?.[1] || 'Unknown';
+                rootCauseGroups[hostname] = suppressedAlerts.filter(s => s.details?.root_cause_device === hostname);
+            });
+
+            let html = '';
+
+            // 渲染根因告警（帶可展開的受影響設備）
+            rootCauseAlerts.forEach(a => {
+                const hostname = a.message?.match(/Device ([^\s]+)/)?.[1] || 'Unknown';
+                const affectedAlerts = rootCauseGroups[hostname] || [];
+                const impactCount = a.details?.impact_count || affectedAlerts.length;
+                const affectedHostnames = a.details?.affected_hostnames || affectedAlerts.map(aa => aa.message?.match(/Device ([^\s]+)/)?.[1]);
+
+                html += `
+                <div class="alert-group root-cause-group">
+                    <div class="alert-card ${a.severity} root-cause" data-alert-id="${a.id}" style="cursor: pointer;">
+                        <div class="alert-header">
+                            <span class="alert-type">
+                                ${getAlertIcon(a.alert_type)} ${formatAlertType(a.alert_type)}
+                            </span>
+                            <span class="alert-severity ${a.severity}">${i18n.t(a.severity).toUpperCase()}</span>
+                        </div>
+                        <div class="root-cause-tag">🔥 ROOT CAUSE</div>
+                        <div class="alert-message">${a.message || i18n.t('noDetails')}</div>
+                        <div class="alert-meta">
+                            <span>⏰ ${formatTime(a.triggered_at)}</span>
+                            <div class="alert-actions">
+                                ${a.is_active && !a.acknowledged_at ?
+                        `<button class="btn-ack" onclick="event.stopPropagation(); openAckModal(${a.id})">${i18n.t('acknowledge')}</button>` :
+                        a.acknowledged_at ? `<span>✓ ${i18n.t('acked')}</span>` : ''
+                    }
+                            </div>
+                        </div>
+                    </div>
+                    ${impactCount > 0 ? `
+                    <div class="affected-devices-summary" onclick="toggleAffectedList(this)">
+                        <span class="expand-icon">▶</span>
+                        <span>📡 ${impactCount} ${i18n.t('devicesAffected')}</span>
+                        <span class="affected-preview">${affectedHostnames.slice(0, 3).join(', ')}${affectedHostnames.length > 3 ? '...' : ''}</span>
+                    </div>
+                    <div class="affected-devices-list" style="display: none;">
+                        ${affectedHostnames.map(h => `
+                            <div class="affected-device-item">
+                                <span class="offline-dot">●</span>
+                                <span>${h}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                </div>`;
+            });
+
+            // 渲染普通告警
+            normalAlerts.forEach(a => {
+                html += `
+                <div class="alert-card ${a.severity}" data-alert-id="${a.id}" style="cursor: pointer;">
                     <div class="alert-header">
                         <span class="alert-type">
                             ${getAlertIcon(a.alert_type)} ${formatAlertType(a.alert_type)}
                         </span>
-                        <span class="alert-severity ${a.severity}">${a.severity.toUpperCase()}</span>
+                        <span class="alert-severity ${a.severity}">${i18n.t(a.severity).toUpperCase()}</span>
                     </div>
-                    <div class="alert-device" style="font-weight: 500; margin-bottom: 0.25rem;">
-                        🖥️ ${a.hostname || 'Unknown'} <span style="color: var(--text-secondary); font-weight: normal;">(${a.ip_address || '-'})</span>
-                    </div>
-                    <div class="alert-message">${a.message || 'No details'}</div>
+                    <div class="alert-message">${a.message || i18n.t('noDetails')}</div>
                     <div class="alert-meta">
                         <span>⏰ ${formatTime(a.triggered_at)}</span>
                         <div class="alert-actions">
                             ${a.is_active && !a.acknowledged_at ?
-                    `<button class="btn-ack" onclick="event.stopPropagation(); acknowledgeAlert(${a.id})">Acknowledge</button>` :
-                    a.acknowledged_at ? `<span>✓ Ack'd</span>` : ''
-                }
+                        `<button class="btn-ack" onclick="event.stopPropagation(); openAckModal(${a.id})">${i18n.t('acknowledge')}</button>` :
+                        a.acknowledged_at ? `<span>✓ ${i18n.t('acked')}</span>` : ''
+                    }
                         </div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleAffectedList(el) {
+            const list = el.nextElementSibling;
+            const icon = el.querySelector('.expand-icon');
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                icon.textContent = '▼';
+                el.classList.add('expanded');
+            } else {
+                list.style.display = 'none';
+                icon.textContent = '▶';
+                el.classList.remove('expanded');
+            }
         }
 
         function renderHistory() {
@@ -488,7 +977,7 @@
                 .slice(0, 10);
 
             if (recent.length === 0) {
-                container.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary);">No recent activity</p>';
+                container.innerHTML = `<p style="padding: 1rem; color: var(--text-secondary);">${i18n.t('noRecentActivity')}</p>`;
                 return;
             }
 
@@ -496,7 +985,7 @@
                 <div class="history-item">
                     <div class="history-event">
                         <span class="history-event-type ${a.is_active ? 'triggered' : 'recovered'}">
-                            ${a.is_active ? 'TRIGGERED' : 'RECOVERED'}
+                            ${a.is_active ? i18n.t('triggered') : i18n.t('recovered')}
                         </span>
                         <span class="history-time">${formatTime(a.is_active ? a.triggered_at : a.recovered_at)}</span>
                     </div>
@@ -530,25 +1019,339 @@
             const date = new Date(dateStr);
             return date.toLocaleString();
         }
+        // ========================================
+        // Acknowledge Modal Functions
+        // ========================================
+        let currentAckAlertId = null;
 
-        async function acknowledgeAlert(alertId) {
+        function openAckModal(alertId) {
+            currentAckAlertId = alertId;
+            document.getElementById('ack-modal-title').textContent = i18n.t('acknowledgeAlert');
+            document.getElementById('ack-modal-desc').textContent = i18n.t('enterReason');
+            document.getElementById('ack-reason').value = '';
+            document.getElementById('ack-error').style.display = 'none';
+            // Reset suppress options
+            document.querySelector('input[name="suppress-type"][value="none"]').checked = true;
+            toggleSuppressDuration();
+            document.getElementById('ack-modal').classList.add('active');
+            document.getElementById('ack-reason').focus();
+        }
+
+        function closeAckModal() {
+            document.getElementById('ack-modal').classList.remove('active');
+            currentAckAlertId = null;
+        }
+
+        function toggleSuppressDuration() {
+            const selectedType = document.querySelector('input[name="suppress-type"]:checked')?.value;
+            const valueInput = document.getElementById('suppress-value');
+            const unitSelect = document.getElementById('suppress-unit');
+
+            if (selectedType === 'duration') {
+                valueInput.disabled = false;
+                unitSelect.disabled = false;
+            } else {
+                valueInput.disabled = true;
+                unitSelect.disabled = true;
+            }
+        }
+
+        async function submitAcknowledge() {
+            // Hide error message first
+            document.getElementById('ack-error').style.display = 'none';
+
+            const reason = document.getElementById('ack-reason').value.trim();
+            if (!reason) {
+                document.getElementById('ack-error').style.display = 'block';
+                return;
+            }
+
+            if (!currentAckAlertId) return;
+
+            // Get suppress settings
+            const suppressType = document.querySelector('input[name="suppress-type"]:checked')?.value;
+            let suppressValue = null;
+            let suppressUnit = null;
+
+            if (suppressType === 'duration') {
+                suppressValue = parseInt(document.getElementById('suppress-value').value) || 30;
+                suppressUnit = document.getElementById('suppress-unit').value;
+            } else if (suppressType === 'until_resolved') {
+                suppressUnit = 'until_resolved';
+            }
+
+            console.log('Submitting acknowledge:', {
+                alertId: currentAckAlertId,
+                reason: reason,
+                suppressType: suppressType,
+                suppressValue: suppressValue,
+                suppressUnit: suppressUnit
+            });
+
             try {
-                await fetch(`${API_BASE}/alerts/${alertId}/acknowledge`, {
+                const response = await fetch(`${API_BASE}/alerts/${currentAckAlertId}/acknowledge`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acknowledged_by: 'admin' })
+                    body: JSON.stringify({
+                        acknowledged_by: 'admin',
+                        reason: reason,
+                        suppress_value: suppressValue,
+                        suppress_unit: suppressUnit
+                    })
                 });
-                loadAlerts();
+
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response:', result);
+
+                if (response.ok) {
+                    closeAckModal();
+                    loadAlerts();
+                } else {
+                    console.error('API error:', result);
+                    alert('Error: ' + (result.detail || 'Failed to acknowledge'));
+                }
             } catch (error) {
                 console.error('Error acknowledging alert:', error);
+                alert('Network error: ' + error.message);
             }
         }
 
         async function acknowledgeAll() {
             const active = alerts.filter(a => a.is_active && !a.acknowledged_at);
+            if (active.length === 0) return;
 
-            for (const alert of active) {
-                await acknowledgeAlert(alert.id);
+            // Open modal for bulk acknowledge
+            document.getElementById('ack-modal-title').textContent = `確認 ${active.length} 個告警`;
+            document.getElementById('ack-modal-desc').textContent = '請輸入確認原因（將套用到所有告警）：';
+            document.getElementById('ack-reason').value = '';
+            document.getElementById('ack-error').style.display = 'none';
+            document.getElementById('ack-modal').classList.add('active');
+            document.getElementById('ack-reason').focus();
+
+            // Store bulk IDs
+            window.bulkAckIds = active.map(a => a.id);
+            currentAckAlertId = 'bulk';
+        }
+
+        // Override submitAcknowledge to handle bulk
+        const originalSubmit = submitAcknowledge;
+        submitAcknowledge = async function () {
+            if (currentAckAlertId === 'bulk' && window.bulkAckIds) {
+                const reason = document.getElementById('ack-reason').value.trim();
+                if (!reason) {
+                    document.getElementById('ack-error').style.display = 'block';
+                    return;
+                }
+                for (const id of window.bulkAckIds) {
+                    await fetch(`${API_BASE}/alerts/${id}/acknowledge`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ acknowledged_by: 'admin', reason: reason })
+                    });
+                }
+                closeAckModal();
+                window.bulkAckIds = null;
+                loadAlerts();
+            } else {
+                await originalSubmit();
+            }
+        };
+
+        // ========================================
+        // Alert Detail Modal Functions
+        // ========================================
+        let currentDetailAlertId = null;
+
+        function openDetailModal(alertId) {
+            currentDetailAlertId = alertId;
+            const alert = alerts.find(a => a.id === alertId);
+            if (!alert) return;
+
+            const body = document.getElementById('detail-modal-body');
+            document.getElementById('detail-modal-title').textContent = `${getAlertIcon(alert.alert_type)} ${formatAlertType(alert.alert_type)}`;
+
+            body.innerHTML = `
+                <div class="alert-detail-section">
+                    <h4>🖥️ ${i18n.t('device')}</h4>
+                    <div class="device-info-box">
+                        <div style="font-weight: 500; font-size: 1.1rem;">${alert.hostname || 'Unknown'}</div>
+                        <div style="color: var(--text-secondary);">IP: ${alert.ip_address || '-'}</div>
+                    </div>
+                </div>
+                <div class="alert-detail-section">
+                    <h4>📋 ${i18n.t('message')}</h4>
+                    <p style="margin: 0;">${alert.message || 'No details'}</p>
+                </div>
+                <div class="alert-detail-section">
+                    <h4>⏰ ${i18n.t('timeline')}</h4>
+                    <p style="margin: 0 0 0.25rem 0;">${i18n.t('triggeredAt')}: ${formatTime(alert.triggered_at)}</p>
+                    <p style="margin: 0;">${i18n.t('status')}: <span style="color: ${alert.is_active ? 'var(--danger)' : 'var(--success)'};">${alert.is_active ? 'Active' : 'Resolved'}</span></p>
+                </div>
+                <div class="alert-detail-section" id="ack-history-section" style="display: none;">
+                    <h4>✅ ${i18n.t('acknowledgeHistory')}</h4>
+                    <div id="ack-history-list">Loading...</div>
+                </div>
+            `;
+
+            // Show/hide buttons based on acknowledge status
+            const btnAck = document.getElementById('btn-ack-from-detail');
+            const btnAddNote = document.getElementById('btn-add-note');
+
+            if (alert.acknowledged_at) {
+                btnAck.style.display = 'none';
+                btnAddNote.style.display = 'inline-block';
+                document.getElementById('ack-history-section').style.display = 'block';
+                loadAckHistory(alertId);
+            } else {
+                btnAck.style.display = 'inline-block';
+                btnAddNote.style.display = 'none';
+            }
+
+            document.getElementById('alert-detail-modal').classList.add('active');
+        }
+
+        function closeDetailModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('alert-detail-modal').classList.remove('active');
+            currentDetailAlertId = null;
+        }
+
+        async function loadAckHistory(alertId) {
+            const container = document.getElementById('ack-history-list');
+            try {
+                const response = await fetch(`${API_BASE}/alerts/${alertId}/history`);
+                const data = await response.json();
+
+                if (!data.history || data.history.length === 0) {
+                    container.innerHTML = `<p style="color: var(--text-secondary);">${i18n.t('noHistory')}</p>`;
+                    return;
+                }
+
+                // Show suppress status if suppressed
+                let suppressInfo = '';
+                if (data.is_suppressed) {
+                    const suppressUntil = data.suppress_until ?
+                        `${i18n.t('until')} ${formatTime(data.suppress_until)}` :
+                        i18n.t('untilResolved');
+                    suppressInfo = `
+                        <div style="padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(210, 153, 34, 0.2); border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>⏸️ ${i18n.t('notificationsSuppressed')} (${suppressUntil})</span>
+                            <button class="btn-secondary" onclick="unsuppressAlert(${alertId})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                ▶️ ${i18n.t('resumeNotifications')}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = suppressInfo + data.history.map((h, idx) => {
+                    const isDeleted = h.is_deleted;
+                    const deletedStyle = isDeleted ? 'text-decoration: line-through; color: var(--text-muted); opacity: 0.7;' : '';
+                    const suppressDuration = h.suppress_duration ? `<span style="color: var(--warning); font-size: 0.75rem;">⏸️ ${h.suppress_duration}</span>` : '';
+
+                    return `
+                    <div class="ack-history-item" style="${deletedStyle}">
+                        <div class="ack-history-header">
+                            <span>#${data.history.length - idx} - ${formatTime(h.event_time)}</span>
+                            <span>by ${h.acknowledged_by || 'Unknown'} ${suppressDuration}</span>
+                        </div>
+                        <div class="ack-history-reason">${h.reason || i18n.t('noReason')}</div>
+                        ${isDeleted ? `
+                            <div style="color: var(--danger); font-size: 0.75rem; font-style: italic; margin-top: 0.25rem;">
+                                🗑️ ${i18n.t('deletedBy')}: ${h.deleted_by} - ${h.delete_reason}
+                            </div>
+                        ` : `
+                            <div class="ack-history-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                                <button class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="editHistoryReason(${alertId}, ${h.id})">
+                                    ✏️ ${i18n.t('edit')}
+                                </button>
+                                <button class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger);" onclick="deleteHistoryReason(${alertId}, ${h.id})">
+                                    🗑️ ${i18n.t('delete')}
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                `}).join('');
+            } catch (error) {
+                console.error('Error loading ack history:', error);
+                container.innerHTML = `<p style="color: var(--danger);">${i18n.t('errorLoadingHistory')}</p>`;
+            }
+        }
+
+        function acknowledgeFromDetail() {
+            if (!currentDetailAlertId) return;
+            closeDetailModal();
+            openAckModal(currentDetailAlertId);
+        }
+
+        function addAckNote() {
+            if (!currentDetailAlertId) return;
+            const alertId = currentDetailAlertId;
+            closeDetailModal();
+
+            // Open modal with "add note" text
+            document.getElementById('ack-modal-title').textContent = i18n.t('addNote');
+            document.getElementById('ack-modal-desc').textContent = i18n.t('enterNotePrompt');
+            document.getElementById('ack-reason').value = '';
+            document.getElementById('ack-error').style.display = 'none';
+            currentAckAlertId = alertId;
+            document.getElementById('ack-modal').classList.add('active');
+            document.getElementById('ack-reason').focus();
+        }
+
+        async function unsuppressAlert(alertId) {
+            const confirmed = await customConfirm(i18n.t('confirmUnsuppress'), i18n.t('resumeNotifications'));
+            if (!confirmed) return;
+
+            try {
+                await fetch(`${API_BASE}/alerts/${alertId}/unsuppress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unsuppressed_by: 'admin' })
+                });
+                loadAckHistory(alertId);
+                loadAlerts();
+            } catch (error) {
+                console.error('Error unsuppressing alert:', error);
+            }
+        }
+
+        async function editHistoryReason(alertId, historyId) {
+            const newReason = await customPrompt(i18n.t('editReasonPrompt'), i18n.t('edit'));
+            if (!newReason) return;
+
+            try {
+                await fetch(`${API_BASE}/alerts/${alertId}/history/${historyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: newReason })
+                });
+                loadAckHistory(alertId);
+            } catch (error) {
+                console.error('Error editing history reason:', error);
+            }
+        }
+
+        async function deleteHistoryReason(alertId, historyId) {
+            const deleteReason = await customPrompt(i18n.t('deleteReasonPrompt'), i18n.t('delete'));
+            if (!deleteReason) return;
+
+            const restoreNotifications = await customConfirm(i18n.t('confirmRestoreNotifications'));
+
+            try {
+                await fetch(`${API_BASE}/alerts/${alertId}/history/${historyId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        deleted_by: 'admin',
+                        delete_reason: deleteReason,
+                        restore_notifications: restoreNotifications
+                    })
+                });
+                loadAckHistory(alertId);
+                if (restoreNotifications) loadAlerts();
+            } catch (error) {
+                console.error('Error deleting history reason:', error);
             }
         }
     </script>

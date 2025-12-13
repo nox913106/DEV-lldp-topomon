@@ -1,0 +1,26 @@
+============================================================
+Verify Cascade Offline Scenario
+============================================================
+
+Offline Devices (9):
+   - dist-sw-03 (distribution)
+   - access-sw-08 (access)
+   - access-sw-10 (access)
+   - access-sw-12 (access)
+   - access-sw-14 (access)
+   - ap-08 (ap)
+   - ap-10 (ap)
+   - ap-12 (ap)
+   - ap-14 (ap)
+
+Device Offline Alerts:
+   [ROOT CAUSE] dist-sw-03: impact=8
+                Affected: access-sw-08, ap-08, access-sw-10, ap-10, access-sw-12, ap-12, access-sw-14, ap-14
+                access-sw-08: impact=-
+                ap-08: impact=-
+                access-sw-10: impact=-
+                ap-10: impact=-
+                access-sw-12: impact=-
+                ap-12: impact=-
+                access-sw-14: impact=-
+                ap-14: impact=-

@@ -53,7 +53,7 @@ FIRMWARE_VERSIONS = {
 
 
 async def seed_demo_data():
-    """Create 50 demo devices with proper hierarchy"""
+    """Create ~100 demo devices with proper hierarchy"""
     print("Dropping and recreating all tables...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -120,24 +120,24 @@ async def seed_demo_data():
         print(f"  Created {len(dist_switches)} distribution switches")
         
         # =============================================
-        # LAYER 3: Access Switches (21) - 7 per floor
-        # Floor 1: access-sw-01 to 07 -> dist-sw-01, dist-sw-02
-        # Floor 2: access-sw-08 to 14 -> dist-sw-03, dist-sw-04
-        # Floor 3: access-sw-15 to 21 -> dist-sw-05, dist-sw-06
+        # LAYER 3: Access Switches (42) - 14 per floor
+        # Floor 1: access-sw-01 to 14 -> dist-sw-01, dist-sw-02
+        # Floor 2: access-sw-15 to 28 -> dist-sw-03, dist-sw-04
+        # Floor 3: access-sw-29 to 42 -> dist-sw-05, dist-sw-06
         # =============================================
         access_switches = []
         floor_assignments = {}  # Track which floor each access switch belongs to
         
-        for i in range(1, 22):
-            if i <= 7:
+        for i in range(1, 43):
+            if i <= 14:
                 floor = 1
                 parent_dist = dist_switches[(i - 1) % 2]  # dist 0 or 1
-            elif i <= 14:
+            elif i <= 28:
                 floor = 2
-                parent_dist = dist_switches[2 + ((i - 8) % 2)]  # dist 2 or 3
+                parent_dist = dist_switches[2 + ((i - 15) % 2)]  # dist 2 or 3
             else:
                 floor = 3
-                parent_dist = dist_switches[4 + ((i - 15) % 2)]  # dist 4 or 5
+                parent_dist = dist_switches[4 + ((i - 29) % 2)]  # dist 4 or 5
             
             vendor = random.choice(['cisco_ios', 'hp_aruba', 'extreme'])
             is_offline = random.random() < 0.05
@@ -166,10 +166,10 @@ async def seed_demo_data():
         print(f"  Created {len(access_switches)} access switches")
         
         # =============================================
-        # LAYER 4: Access Points (15) - connected to access switches
+        # LAYER 4: Access Points (50) - connected to access switches
         # =============================================
         aps = []
-        for i in range(1, 16):
+        for i in range(1, 51):
             parent_access = access_switches[(i - 1) % len(access_switches)]
             
             device = Device(
@@ -403,5 +403,132 @@ async def seed_demo_data():
         print(f"⚠️  Alerts: {len(alerts)}")
 
 
+
+async def enable_cascade_offline_scenario():
+    """
+    🔴 連鎖離線情境演示
+    模擬 dist-sw-03 離線，導致其下游設備全部離線
+    
+    拓撲結構:
+    core-sw-01
+        └── dist-sw-03 (ROOT CAUSE - OFFLINE)
+            ├── access-sw-08 (OFFLINE)
+            │   └── ap-08 (OFFLINE)
+            ├── access-sw-10 (OFFLINE)
+            │   └── ap-10 (OFFLINE)
+            ├── access-sw-12 (OFFLINE)
+            │   └── ap-12 (OFFLINE)
+            └── access-sw-14 (OFFLINE)
+                └── ap-14 (OFFLINE)
+    """
+    print("\n" + "=" * 60)
+    print("🔴 啟用連鎖離線演示情境")
+    print("=" * 60)
+    
+    async with async_session_maker() as db:
+        from sqlalchemy import select, update
+        from sqlalchemy.orm import selectinload
+        
+        # 1. 找到 dist-sw-03 (根因設備)
+        result = await db.execute(
+            select(Device).where(Device.hostname == "dist-sw-03")
+        )
+        root_device = result.scalar_one_or_none()
+        
+        if not root_device:
+            print("❌ 找不到 dist-sw-03，請先執行 seed_demo.py")
+            return
+        
+        print(f"\n📍 根因設備: {root_device.hostname} (ID: {root_device.id})")
+        
+        # 2. 將 dist-sw-03 設為離線
+        root_device.status = DeviceStatus.OFFLINE
+        root_device.cpu_percent = None
+        root_device.memory_percent = None
+        root_device.last_seen = datetime.utcnow() - timedelta(minutes=30)
+        
+        # 3. 遞迴找出所有下游設備並設為離線
+        affected_devices = []
+        
+        async def mark_children_offline(parent_id: int, depth: int = 0):
+            result = await db.execute(
+                select(Device).where(Device.parent_device_id == parent_id)
+            )
+            children = result.scalars().all()
+            
+            for child in children:
+                prefix = "  " * depth
+                print(f"{prefix}├── {child.hostname} → OFFLINE")
+                child.status = DeviceStatus.OFFLINE
+                child.cpu_percent = None
+                child.memory_percent = None
+                child.last_seen = datetime.utcnow() - timedelta(minutes=30)
+                affected_devices.append(child)
+                await mark_children_offline(child.id, depth + 1)
+        
+        print(f"\n連鎖影響:")
+        await mark_children_offline(root_device.id)
+        
+        # 4. 為根因設備建立告警
+        root_alert = Alert(
+            device_id=root_device.id,
+            alert_type="device_offline",
+            severity="critical",
+            message=f"[ROOT CAUSE] Device {root_device.hostname} is offline - affecting {len(affected_devices)} downstream devices",
+            is_active=True,
+            triggered_at=datetime.utcnow() - timedelta(minutes=30),
+            details={
+                "is_root_cause": True,
+                "impact_count": len(affected_devices),
+                "affected_hostnames": [d.hostname for d in affected_devices]
+            }
+        )
+        db.add(root_alert)
+        await db.flush()
+        await db.refresh(root_alert)
+        
+        # 5. 為下游設備建立被抑制的告警
+        for device in affected_devices:
+            alert = Alert(
+                device_id=device.id,
+                alert_type="device_offline",
+                severity="critical",
+                message=f"Device {device.hostname} is offline (caused by {root_device.hostname})",
+                is_active=True,
+                triggered_at=datetime.utcnow() - timedelta(minutes=29),
+                details={
+                    "is_root_cause": False,
+                    "root_cause_device": root_device.hostname,
+                    "is_suppressed": True
+                }
+            )
+            db.add(alert)
+        
+        await db.commit()
+        
+        # 6. 統計輸出
+        print(f"\n📊 影響統計:")
+        print(f"   根因設備: {root_device.hostname}")
+        print(f"   受影響設備: {len(affected_devices)} 台")
+        
+        device_types = {}
+        for d in affected_devices:
+            device_types[d.device_type] = device_types.get(d.device_type, 0) + 1
+        for t, c in device_types.items():
+            print(f"   - {t}: {c} 台")
+        
+        print(f"\n✅ 連鎖離線情境已啟用!")
+        print(f"   Root Alert ID: {root_alert.id}")
+        print(f"   總告警數: {1 + len(affected_devices)}")
+
+
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Seed demo data")
+    parser.add_argument("--cascade", action="store_true", help="Enable cascade offline scenario")
+    args = parser.parse_args()
+    
     asyncio.run(seed_demo_data())
+    
+    if args.cascade:
+        asyncio.run(enable_cascade_offline_scenario())

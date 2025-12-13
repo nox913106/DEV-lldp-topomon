@@ -82,3 +82,116 @@ async def get_discovery_status(job_id: Optional[str] = None):
         return DiscoveryStatusResponse(**latest)
     
     return None
+
+
+class ManualDiscoveryRequest(BaseModel):
+    ip: str
+    community: str = "public"
+    recursive: bool = True
+
+
+class DeviceDiscovered(BaseModel):
+    ip: str
+    hostname: Optional[str] = None
+    is_new: bool = False
+
+
+class ManualDiscoveryResponse(BaseModel):
+    success: bool
+    discovered_count: int = 0
+    added_count: int = 0
+    devices: list = []
+    error: Optional[str] = None
+
+
+@router.post("/manual", response_model=ManualDiscoveryResponse)
+async def manual_discover(request: ManualDiscoveryRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Manually discover devices starting from an IP address
+    """
+    try:
+        from sqlalchemy import select
+        from app.models.device import Device
+        
+        discovered_devices = []
+        added_count = 0
+        
+        # Try to get device info via SNMP
+        try:
+            from pysnmp.hlapi.asyncio import (
+                getCmd, SnmpEngine, CommunityData, 
+                UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
+            )
+            
+            # Get sysName
+            errorIndication, errorStatus, errorIndex, varBinds = await getCmd(
+                SnmpEngine(),
+                CommunityData(request.community),
+                UdpTransportTarget((request.ip, 161), timeout=5.0, retries=1),
+                ContextData(),
+                ObjectType(ObjectIdentity('1.3.6.1.2.1.1.5.0'))  # sysName
+            )
+            
+            hostname = None
+            if not errorIndication and not errorStatus and varBinds:
+                hostname = varBinds[0][1].prettyPrint()
+            
+            # Check if device already exists
+            result = await db.execute(
+                select(Device).where(Device.ip_address == request.ip)
+            )
+            existing = result.scalar_one_or_none()
+            
+            if existing:
+                discovered_devices.append({
+                    "ip": request.ip,
+                    "hostname": existing.hostname,
+                    "is_new": False
+                })
+            else:
+                # Add new device
+                new_device = Device(
+                    hostname=hostname or f"device-{request.ip.replace('.', '-')}",
+                    ip_address=request.ip,
+                    snmp_community=request.community,
+                    device_type="access",
+                    vendor="unknown",
+                    status="managed"
+                )
+                db.add(new_device)
+                await db.commit()
+                
+                discovered_devices.append({
+                    "ip": request.ip,
+                    "hostname": new_device.hostname,
+                    "is_new": True
+                })
+                added_count += 1
+            
+            # TODO: If recursive, discover LLDP neighbors
+            if request.recursive:
+                # Placeholder for recursive discovery
+                pass
+                
+        except ImportError:
+            # Demo mode without pysnmp
+            discovered_devices.append({
+                "ip": request.ip,
+                "hostname": f"demo-device-{request.ip.split('.')[-1]}",
+                "is_new": True
+            })
+            added_count = 1
+        
+        return ManualDiscoveryResponse(
+            success=True,
+            discovered_count=len(discovered_devices),
+            added_count=added_count,
+            devices=discovered_devices
+        )
+        
+    except Exception as e:
+        return ManualDiscoveryResponse(
+            success=False,
+            error=str(e)
+        )
+

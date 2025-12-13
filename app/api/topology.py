@@ -51,6 +51,7 @@ async def get_topology(
         if not devices:
             result = await db.execute(select(Device))
             devices = result.scalars().all()
+        group_device_ids = None  # Not a group view
     elif view == "group" and group_id:
         # Get devices in specific group + their parent devices (hierarchy-based)
         from app.models.group import DeviceGroupMember

@@ -36,6 +36,26 @@
     --link-label-color: #0969da;
 }
 
+/* Offline Device Blinking Animation */
+@keyframes offline-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+        stroke-width: 3;
+    }
+
+    50% {
+        opacity: 0.2;
+        stroke-width: 1;
+    }
+}
+
+.offline-blink {
+    animation: offline-blink 0.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -495,4 +515,218 @@ body {
 .port-util.critical {
     background: rgba(248, 81, 73, 0.2);
     color: var(--danger);
+}
+
+/* ========================================
+   Device Hierarchy Modal
+======================================== */
+.hierarchy-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.hierarchy-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.hierarchy-modal-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hierarchy-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.hierarchy-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.hierarchy-section {
+    margin-bottom: 1.5rem;
+}
+
+.hierarchy-section h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.device-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.device-info-grid>div {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.device-info-grid .label {
+    color: var(--text-secondary);
+}
+
+.device-info-grid .value {
+    font-weight: 500;
+}
+
+/* Hierarchy Tree */
+.hierarchy-tree {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+}
+
+.hierarchy-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.hierarchy-item.current {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.hierarchy-icon {
+    font-size: 0.875rem;
+}
+
+.hierarchy-hostname {
+    font-weight: 500;
+    flex: 1;
+}
+
+.hierarchy-type {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+}
+
+.hierarchy-item.current .hierarchy-type {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+}
+
+.hierarchy-status {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    background: var(--success);
+    color: white;
+}
+
+.hierarchy-status.offline {
+    background: var(--danger);
+}
+
+/* Children List */
+.hierarchy-children-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hierarchy-child {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.hierarchy-child .hierarchy-hostname {
+    flex: 1;
+}
+
+.hierarchy-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Alerts in Hierarchy */
+.hierarchy-alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hierarchy-alert {
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border-left: 3px solid var(--warning);
+}
+
+.hierarchy-alert.critical {
+    border-left-color: var(--danger);
+}
+
+.hierarchy-alert strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.hierarchy-alert p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.hierarchy-modal-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
 }

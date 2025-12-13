@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEV-lldp-topomon 系統使用說明書</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --border: #30363d;
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent), #a371f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header .meta {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        nav {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        nav h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        nav ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+
+        nav a {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: block;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background: var(--bg-tertiary);
+            color: var(--accent);
+        }
+
+        section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--accent);
+        }
+
+        h4 {
+            font-size: 1rem;
+            margin: 1rem 0 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th,
+        td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        td {
+            background: var(--bg-primary);
+        }
+
+        code {
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+        }
+
+        pre {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        ul,
+        ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-card p {
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .tip {
+            background: rgba(88, 166, 255, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .tip-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .warning {
+            background: rgba(210, 153, 34, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-title {
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 0.5rem;
+        }
+
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step;
+            padding-left: 2.5rem;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            nav ul {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ DEV-lldp-topomon</h1>
+            <p class="meta">
+                <strong>版本</strong>: 1.0 &nbsp;|&nbsp;
+                <strong>最後更新</strong>: 2025-12-12 &nbsp;|&nbsp;
+                <strong>語言支援</strong>: 繁體中文 / 簡體中文 / English
+            </p>
+        </header>
+
+        <nav>
+            <h2>📑 目錄</h2>
+            <ul>
+                <li><a href="#overview">1. 系統概述</a></li>
+                <li><a href="#quickstart">2. 快速開始</a></li>
+                <li><a href="#topology">3.1 拓撲圖</a></li>
+                <li><a href="#devices">3.2 設備管理</a></li>
+                <li><a href="#alerts">3.3 告警中心</a></li>
+                <li><a href="#groups">3.4 群組管理</a></li>
+                <li><a href="#settings">3.5 系統設定</a></li>
+                <li><a href="#advanced">4. 進階功能</a></li>
+                <li><a href="#faq">5. 常見問題</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>🌐 1. 系統概述</h2>
+            <p><strong>DEV-lldp-topomon</strong> 是一個基於 LLDP（Link Layer Discovery Protocol）的網路拓撲監控系統。</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">🗺️</div>
+                    <h4>即時拓撲圖</h4>
+                    <p>視覺化網路設備連接關係</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📊</div>
+                    <h4>設備監控</h4>
+                    <p>CPU、記憶體、連接狀態監控</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🚨</div>
+                    <h4>智慧告警</h4>
+                    <p>級聯離線偵測與根本原因分析</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">👥</div>
+                    <h4>群組管理</h4>
+                    <p>按區域/功能分組設備</p>
+                </div>
+            </div>
+
+            <h3>技術架構</h3>
+            <table>
+                <tr>
+                    <th>層級</th>
+                    <th>技術</th>
+                </tr>
+                <tr>
+                    <td>前端</td>
+                    <td>HTML5 + CSS3 + JavaScript (vis.js)</td>
+                </tr>
+                <tr>
+                    <td>後端</td>
+                    <td>Python FastAPI</td>
+                </tr>
+                <tr>
+                    <td>資料庫</td>
+                    <td>SQLite</td>
+                </tr>
+                <tr>
+                    <td>協定</td>
+                    <td>SNMP v2c (LLDP-MIB)</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="quickstart">
+            <h2>🚀 2. 快速開始</h2>
+
+            <h3>系統需求</h3>
+            <ul>
+                <li>Python 3.9+</li>
+                <li>現代瀏覽器 (Chrome, Firefox, Edge)</li>
+                <li>網路設備需支援 SNMP 和 LLDP</li>
+            </ul>
+
+            <h3>安裝步驟</h3>
+            <pre><code># 1. 複製專案
+git clone &lt;repository-url&gt;
+cd DEV-lldp-topomon
+
+# 2. 建立虛擬環境
+python -m venv venv
+.\venv\Scripts\activate  # Windows
+
+# 3. 安裝依賴
+pip install -r requirements.txt
+
+# 4. 初始化資料庫
+python -c "from app.db import init_db; init_db()"
+
+# 5. 啟動伺服器
+uvicorn app.main:app --host 0.0.0.0 --port 8080</code></pre>
+
+            <h3>存取系統</h3>
+            <p>開啟瀏覽器前往：<code>http://localhost:8080</code></p>
+        </section>
+
+        <section id="topology">
+            <h2>🗺️ 3.1 拓撲圖</h2>
+            <p>拓撲圖是系統的核心功能，提供網路架構的視覺化呈現。</p>
+
+            <h3>視圖模式</h3>
+            <table>
+                <tr>
+                    <th>模式</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>總覽 (Overview)</td>
+                    <td>顯示所有設備，自動佈局</td>
+                </tr>
+                <tr>
+                    <td>完整地圖 (Full Map)</td>
+                    <td>完整拓撲，可縮放平移</td>
+                </tr>
+                <tr>
+                    <td>群組視圖 (Group View)</td>
+                    <td>依群組篩選顯示設備</td>
+                </tr>
+            </table>
+
+            <h3>設備圖示</h3>
+            <table>
+                <tr>
+                    <th>圖示</th>
+                    <th>類型</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-success">🟢</span></td>
+                    <td>線上設備</td>
+                    <td>正常運作中</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-danger">🔴</span></td>
+                    <td>離線設備</td>
+                    <td>無法連接</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-warning">🟡</span></td>
+                    <td>警告狀態</td>
+                    <td>效能指標偏高</td>
+                </tr>
+            </table>
+
+            <h3>操作方式</h3>
+            <ul>
+                <li><strong>點擊設備</strong> → 顯示設備詳情面板</li>
+                <li><strong>雙擊設備</strong> → 開啟完整詳情彈窗（含階層資訊）</li>
+                <li><strong>拖曳設備</strong> → 調整設備位置</li>
+                <li><strong>滾輪縮放</strong> → 放大/縮小拓撲圖</li>
+                <li><strong>右鍵拖曳</strong> → 平移視圖</li>
+            </ul>
+
+            <h3>設備詳情彈窗</h3>
+            <p>雙擊設備後會顯示：</p>
+            <ul>
+                <li><strong>設備資訊</strong>: IP 位址、類型、品牌、型號、韌體、CPU/記憶體使用率</li>
+                <li><strong>上游設備</strong>: 此設備連接的上層設備清單</li>
+                <li><strong>下游設備</strong>: 此設備管理的下層設備清單</li>
+                <li><strong>活躍告警</strong>: 與此設備相關的未解決告警</li>
+            </ul>
+        </section>
+
+        <section id="devices">
+            <h2>💻 3.2 設備管理</h2>
+            <p>進入 <strong>設備 (Devices)</strong> 頁面管理所有網路設備。</p>
+
+            <h3>設備列表功能</h3>
+            <table>
+                <tr>
+                    <th>功能</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>搜尋</td>
+                    <td>依主機名稱或 IP 位址篩選</td>
+                </tr>
+                <tr>
+                    <td>狀態篩選</td>
+                    <td>線上 / 離線 / 未知</td>
+                </tr>
+                <tr>
+                    <td>品牌篩選</td>
+                    <td>Cisco / HP / Juniper 等</td>
+                </tr>
+                <tr>
+                    <td>排序</td>
+                    <td>點擊表頭進行升降序排序</td>
+                </tr>
+                <tr>
+                    <td>分頁</td>
+                    <td>調整每頁顯示筆數</td>
+                </tr>
+            </table>
+
+            <h3>新增設備</h3>
+            <ol class="steps">
+                <li>點擊 <strong>「+ 新增設備」</strong> 按鈕</li>
+                <li>填寫設備資訊：Hostname、IP Address、Vendor、Device Type、SNMP Community、Alert Profile</li>
+                <li><strong>Auto-discover neighbors</strong> 選項：
+                    <ul>
+                        <li>✅ 勾選：自動透過 LLDP 發現並新增鄰居設備</li>
+                        <li>❌ 不勾選：僅新增此設備</li>
+                    </ul>
+                </li>
+                <li>點擊 <strong>「儲存」</strong></li>
+            </ol>
+
+            <div class="tip">
+                <div class="tip-title">💡 提示</div>
+                <p>Auto-discover neighbors 功能會自動透過 LLDP 探索該設備的鄰居並新增至系統，適合用於快速建立拓撲。</p>
+            </div>
+        </section>
+
+        <section id="alerts">
+            <h2>🚨 3.3 告警中心</h2>
+            <p>進入 <strong>告警 (Alerts)</strong> 頁面查看系統告警。</p>
+
+            <h3>告警類型</h3>
+            <table>
+                <tr>
+                    <th>類型</th>
+                    <th>嚴重程度</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>設備離線</td>
+                    <td><span class="badge badge-danger">Critical</span></td>
+                    <td>設備無法通過 SNMP 連接</td>
+                </tr>
+                <tr>
+                    <td>CPU 過高</td>
+                    <td><span class="badge badge-warning">Warning/Critical</span></td>
+                    <td>CPU 使用率超過閾值</td>
+                </tr>
+                <tr>
+                    <td>記憶體過高</td>
+                    <td><span class="badge badge-warning">Warning/Critical</span></td>
+                    <td>記憶體使用率超過閾值</td>
+                </tr>
+                <tr>
+                    <td>連結使用率過高</td>
+                    <td><span class="badge badge-warning">Warning/Critical</span></td>
+                    <td>網路介面使用率超過閾值</td>
+                </tr>
+            </table>
+
+            <h3>級聯離線偵測</h3>
+            <p>系統會自動分析設備階層，判斷離線原因：</p>
+            <ul>
+                <li><strong>根本原因告警 (Root Cause)</strong>: 標記為 <span class="badge badge-danger">ROOT
+                        CAUSE</span>，表示此設備直接導致其他設備離線</li>
+                <li><strong>受影響設備</strong>: 因上游設備離線而無法連接的設備</li>
+            </ul>
+
+            <h3>告警操作</h3>
+            <table>
+                <tr>
+                    <th>操作</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>確認告警</td>
+                    <td>需輸入確認原因，記錄處理責任</td>
+                </tr>
+                <tr>
+                    <td>批量確認</td>
+                    <td>一次確認所有活躍告警</td>
+                </tr>
+                <tr>
+                    <td>查看詳情</td>
+                    <td>點擊告警卡片查看完整資訊</td>
+                </tr>
+                <tr>
+                    <td>前往拓撲</td>
+                    <td>在拓撲圖中定位該設備</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="groups">
+            <h2>👥 3.4 群組管理</h2>
+            <p>進入 <strong>群組 (Groups)</strong> 頁面組織設備。</p>
+
+            <h3>建立群組</h3>
+            <ol class="steps">
+                <li>點擊 <strong>「+ 新增」</strong> 按鈕</li>
+                <li>填寫群組資訊：名稱、描述、父群組、顏色</li>
+                <li>點擊 <strong>「儲存」</strong></li>
+            </ol>
+
+            <h3>管理群組設備</h3>
+            <ol class="steps">
+                <li>在左側選擇群組</li>
+                <li>右側顯示該群組的設備清單</li>
+                <li>可進行移動設備或移除設備操作</li>
+            </ol>
+        </section>
+
+        <section id="settings">
+            <h2>⚙️ 3.5 系統設定</h2>
+            <p>進入 <strong>設定 (Settings)</strong> 頁面配置系統。</p>
+
+            <h3>SNMP 設定</h3>
+            <table>
+                <tr>
+                    <th>設定項目</th>
+                    <th>預設值</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>預設社群字串</td>
+                    <td>-</td>
+                    <td>未設定專屬社群的設備使用此值</td>
+                </tr>
+                <tr>
+                    <td>輪詢間隔</td>
+                    <td>60 秒</td>
+                    <td>設備狀態更新頻率 (30-300秒)</td>
+                </tr>
+                <tr>
+                    <td>SNMP 逾時</td>
+                    <td>5 秒</td>
+                    <td>單次 SNMP 請求逾時時間</td>
+                </tr>
+                <tr>
+                    <td>SNMP 重試</td>
+                    <td>2 次</td>
+                    <td>失敗後重試次數</td>
+                </tr>
+            </table>
+
+            <h3>告警設定檔</h3>
+            <table>
+                <tr>
+                    <th>指標</th>
+                    <th>警告閾值</th>
+                    <th>嚴重閾值</th>
+                </tr>
+                <tr>
+                    <td>CPU 使用率</td>
+                    <td>80%</td>
+                    <td>95%</td>
+                </tr>
+                <tr>
+                    <td>記憶體使用率</td>
+                    <td>85%</td>
+                    <td>95%</td>
+                </tr>
+                <tr>
+                    <td>連結使用率</td>
+                    <td>70%</td>
+                    <td>90%</td>
+                </tr>
+            </table>
+
+            <h3>通知設定</h3>
+            <table>
+                <tr>
+                    <th>設定</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>瀏覽器通知</td>
+                    <td>新告警時顯示桌面通知</td>
+                </tr>
+                <tr>
+                    <td>聲音警報</td>
+                    <td>嚴重告警時播放提示音</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="advanced">
+            <h2>🔧 4. 進階功能</h2>
+
+            <h3>多語系切換</h3>
+            <p>系統自動偵測瀏覽器語言設定，支援：</p>
+            <ul>
+                <li>繁體中文 (zh-TW)</li>
+                <li>簡體中文 (zh-CN)</li>
+                <li>English (en)</li>
+            </ul>
+
+            <h3>API 存取</h3>
+            <p>系統提供 RESTful API，可透過程式化方式存取：</p>
+            <pre><code>GET  /api/v1/devices          - 取得設備清單
+GET  /api/v1/topology         - 取得拓撲資料
+GET  /api/v1/alerts           - 取得告警清單
+POST /api/v1/devices          - 新增設備
+PUT  /api/v1/devices/{id}     - 更新設備
+DELETE /api/v1/devices/{id}   - 刪除設備</code></pre>
+            <p>API 文件：<code>http://localhost:8080/docs</code></p>
+        </section>
+
+        <section id="faq">
+            <h2>❓ 5. 常見問題</h2>
+
+            <h3>Q1: 設備顯示離線但實際可連接？</h3>
+            <p><strong>可能原因</strong>:</p>
+            <ul>
+                <li>SNMP 社群字串設定錯誤</li>
+                <li>防火牆阻擋 SNMP 埠 (UDP 161)</li>
+                <li>設備 SNMP 服務未啟用</li>
+            </ul>
+            <p><strong>解決方法</strong>: 確認設備的 SNMP 設定，檢查網路防火牆規則，使用 <code>snmpwalk</code> 測試連線。</p>
+
+            <h3>Q2: 拓撲圖沒有顯示連接線？</h3>
+            <p><strong>可能原因</strong>:</p>
+            <ul>
+                <li>設備未啟用 LLDP</li>
+                <li>LLDP 鄰居表尚未建立</li>
+                <li>未執行自動發現</li>
+            </ul>
+            <p><strong>解決方法</strong>: 確認設備已啟用 LLDP，等待幾分鐘讓 LLDP 交換資訊，重新執行設備發現。</p>
+
+            <h3>Q3: 告警確認後仍顯示活躍？</h3>
+            <p><strong>說明</strong>: 確認告警只是標記已處理，並不會關閉告警。告警會在問題解決後自動轉為「已恢復」狀態。</p>
+
+            <h3>Q4: 如何備份資料？</h3>
+            <p><strong>方法</strong>: 備份專案目錄下的 <code>topology.db</code> 檔案即可保存所有設備和配置資料。</p>
+        </section>
+
+        <footer>
+            <p>© 2025 DEV-lldp-topomon. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+
+</html>

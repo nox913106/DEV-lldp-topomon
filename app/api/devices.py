@@ -113,6 +113,95 @@ async def create_device(
     return db_device
 
 
+@router.get("/{device_id}/hierarchy")
+async def get_device_hierarchy(
+    device_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get device hierarchy (upstream ancestors + downstream children)
+    Returns:
+    - device: The target device info
+    - ancestors: List of upstream devices (parent -> grandparent -> ...)
+    - children: List of direct child devices
+    """
+    # Get the target device
+    result = await db.execute(
+        select(Device).where(Device.id == device_id)
+    )
+    device = result.scalar_one_or_none()
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with id {device_id} not found"
+        )
+    
+    # Get ancestor chain (walk up the parent_device_id)
+    ancestors = []
+    current = device
+    while current.parent_device_id:
+        parent_result = await db.execute(
+            select(Device).where(Device.id == current.parent_device_id)
+        )
+        parent = parent_result.scalar_one_or_none()
+        if parent:
+            ancestors.append({
+                "id": parent.id,
+                "hostname": parent.hostname,
+                "ip_address": parent.ip_address,
+                "device_type": parent.device_type,
+                "status": parent.status,
+                "vendor": parent.vendor
+            })
+            current = parent
+        else:
+            break
+    
+    # Get ALL descendants recursively (children + grandchildren + ...)
+    async def get_all_descendants(parent_id: int) -> list:
+        """Recursively get all descendants of a device"""
+        descendants = []
+        result = await db.execute(
+            select(Device).where(Device.parent_device_id == parent_id)
+        )
+        direct_children = result.scalars().all()
+        
+        for child in direct_children:
+            descendants.append({
+                "id": child.id,
+                "hostname": child.hostname,
+                "ip_address": child.ip_address,
+                "device_type": child.device_type,
+                "status": child.status,
+                "vendor": child.vendor
+            })
+            # Recursively get grandchildren
+            grandchildren = await get_all_descendants(child.id)
+            descendants.extend(grandchildren)
+        
+        return descendants
+    
+    children_list = await get_all_descendants(device_id)
+    
+    return {
+        "device": {
+            "id": device.id,
+            "hostname": device.hostname,
+            "ip_address": device.ip_address,
+            "device_type": device.device_type,
+            "status": device.status,
+            "vendor": device.vendor,
+            "model": device.model,
+            "firmware_version": device.firmware_version,
+            "cpu_percent": device.cpu_percent,
+            "memory_percent": device.memory_percent
+        },
+        "ancestors": ancestors,  # [parent, grandparent, ...]
+        "children": children_list
+    }
+
+
 @router.get("/{device_id}", response_model=DeviceResponse)
 async def get_device(
     device_id: int,

@@ -50,6 +50,14 @@ class Alert(Base):
     recovered_at = Column(DateTime(timezone=True))
     acknowledged_at = Column(DateTime(timezone=True))
     acknowledged_by = Column(String(100))
+    acknowledge_reason = Column(Text)  # Reason for acknowledgment
+    
+    # Suppress notification fields
+    is_suppressed = Column(Boolean, default=False)  # Whether notifications are suppressed
+    suppress_until = Column(DateTime(timezone=True))  # Suppress until this time (null = until resolved)
+    
+    # Extended fields for cascade impact
+    details = Column(JSON)  # {is_root_cause, impact_count, affected_hostnames, ...}
     
     # Relationships
     device = relationship("Device", back_populates="alerts")
@@ -66,9 +74,15 @@ class AlertHistory(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     alert_id = Column(Integer, ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False)
-    event_type = Column(String(50))  # triggered, escalated, recovered, acknowledged
+    event_type = Column(String(50))  # triggered, escalated, recovered, acknowledged, unsuppressed
     event_time = Column(DateTime(timezone=True), server_default=func.now())
-    details = Column(JSON)  # Changed to JSON for SQLite compat
+    details = Column(JSON)  # {acknowledged_by, reason, suppress_duration, ...}
+    
+    # Soft delete fields
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime(timezone=True))
+    deleted_by = Column(String(100))
+    delete_reason = Column(Text)
     
     # Relationships
     alert = relationship("Alert", back_populates="history")

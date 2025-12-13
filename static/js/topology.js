@@ -210,9 +210,10 @@ class TopologyGraph {
             .attr('y', -26)
             .html(d => this.deviceIcons[this.getDeviceType(d)] || this.deviceIcons.unknown);
 
-        // Offline overlay
+        // Offline overlay with blinking animation
         nodeElements.filter(d => d.status === 'offline')
             .append('rect')
+            .attr('class', 'offline-blink')
             .attr('x', -26)
             .attr('y', -26)
             .attr('width', 52)

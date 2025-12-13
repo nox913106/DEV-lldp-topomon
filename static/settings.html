@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - DEV-lldp-topomon</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/theme.js"></script>
     <style>
         .settings-container {
             padding: 1.5rem;
@@ -276,10 +277,78 @@
             color: var(--text-secondary);
             margin-top: 0.25rem;
         }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.125rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
     </style>
 </head>
 
 <body>
+    <script src="/static/js/i18n.js"></script>
     <div class="app-container">
         <!-- Header -->
         <header class="header">
@@ -288,34 +357,60 @@
                 <span class="logo-text">LLDP Topology Monitor</span>
             </div>
             <nav class="nav">
-                <a href="/" class="nav-item">Topology</a>
-                <a href="/devices" class="nav-item">Devices</a>
-                <a href="/alerts" class="nav-item">Alerts</a>
-                <a href="/groups" class="nav-item">Groups</a>
-                <a href="/settings" class="nav-item active">Settings</a>
+                <a href="/" class="nav-item" data-i18n="topology">Topology</a>
+                <a href="/devices" class="nav-item" data-i18n="devices">Devices</a>
+                <a href="/alerts" class="nav-item" data-i18n="alerts">Alerts</a>
+                <a href="/groups" class="nav-item" data-i18n="groups">Groups</a>
+                <a href="/settings" class="nav-item active" data-i18n="settings">Settings</a>
             </nav>
         </header>
 
         <!-- Main Content -->
         <div class="settings-container">
+            <!-- Appearance Settings -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2>🎨 <span data-i18n="appearance">Appearance</span></h2>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="language">Language</label>
+                            <select id="language-select" onchange="changeLanguage(this.value)">
+                                <option value="en">English</option>
+                                <option value="zh-TW">繁體中文</option>
+                                <option value="zh-CN">简体中文</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="theme">Theme</label>
+                            <select id="theme-select" onchange="changeTheme(this.value)">
+                                <option value="dark">🌙 Dark</option>
+                                <option value="light">☀️ Light</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- System Info -->
             <div class="settings-section">
                 <div class="section-header">
-                    <h2>📊 System Overview</h2>
+                    <h2>📊 <span data-i18n="systemOverview">System Overview</span></h2>
                 </div>
                 <div class="section-content">
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="info-value" id="info-devices">-</div>
-                            <div class="info-label">Total Devices</div>
+                            <div class="info-label" data-i18n="totalDevices">Total Devices</div>
                         </div>
                         <div class="info-item">
                             <div class="info-value" id="info-alerts">-</div>
-                            <div class="info-label">Active Alerts</div>
+                            <div class="info-label" data-i18n="activeAlerts">Active Alerts</div>
                         </div>
                         <div class="info-item">
                             <div class="info-value" id="info-links">-</div>
-                            <div class="info-label">Total Links</div>
+                            <div class="info-label" data-i18n="totalLinks">Total Links</div>
                         </div>
                     </div>
                 </div>
@@ -324,33 +419,56 @@
             <!-- SNMP Settings -->
             <div class="settings-section">
                 <div class="section-header">
-                    <h2>🔧 SNMP Configuration</h2>
+                    <h2>🔧 <span data-i18n="snmpConfiguration">SNMP Configuration</span></h2>
                 </div>
                 <div class="section-content">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Default Community String</label>
+                            <label data-i18n="defaultCommunity">Default Community String</label>
                             <input type="password" id="snmp-community" placeholder="Enter community string">
                             <div class="form-help">Used for devices without specific community configured</div>
                         </div>
                         <div class="form-group">
-                            <label>Poll Interval (seconds)</label>
+                            <label data-i18n="pollInterval">Poll Interval (seconds)</label>
                             <input type="number" id="snmp-interval" value="60" min="30" max="300">
                             <div class="form-help">How often to poll devices (30-300s)</div>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>SNMP Timeout (seconds)</label>
+                            <label data-i18n="snmpTimeout">SNMP Timeout (seconds)</label>
                             <input type="number" id="snmp-timeout" value="5" min="1" max="30">
                         </div>
                         <div class="form-group">
-                            <label>SNMP Retries</label>
+                            <label data-i18n="snmpRetries">SNMP Retries</label>
                             <input type="number" id="snmp-retries" value="2" min="0" max="5">
                         </div>
                     </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+                    <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">🔒 <span
+                            data-i18n="allowedSubnets">允許的網段</span></h4>
+                    <div class="form-group">
+                        <label data-i18n="allowedSubnetsLabel">探索/測試的目標 IP 必須在以下網段內</label>
+                        <textarea id="allowed-subnets" rows="4"
+                            placeholder="192.168.0.0/16&#10;10.0.0.0/8&#10;172.16.0.0/12"
+                            style="font-family: monospace; font-size: 0.875rem;"></textarea>
+                        <div class="form-help" data-i18n="cidrHelpText">One CIDR per line, leave empty for no
+                            restriction</div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="enforce-subnet" checked style="width: auto;">
+                            <span data-i18n="enforceSubnetRestriction">Enable Subnet Restriction</span>
+                        </label>
+                        <div class="form-help" data-i18n="subnetRestrictionHelp">When enabled, SNMP testing and device
+                            discovery only work for IPs within allowed subnets</div>
+                    </div>
+
                     <div class="btn-row">
-                        <button class="btn-save" onclick="saveSnmpSettings()">Save SNMP Settings</button>
+                        <button class="btn-save" onclick="saveSnmpSettings()" data-i18n="saveSnmpSettings">Save SNMP
+                            Settings</button>
                     </div>
                 </div>
             </div>
@@ -358,8 +476,9 @@
             <!-- Alert Profiles -->
             <div class="settings-section">
                 <div class="section-header">
-                    <h2>🚨 Alert Profiles</h2>
-                    <button class="btn-secondary" onclick="openProfileModal()">+ New Profile</button>
+                    <h2>🚨 <span data-i18n="alertProfiles">Alert Profiles</span></h2>
+                    <button class="btn-secondary" onclick="openProfileModal()" data-i18n="newProfile">+ New
+                        Profile</button>
                 </div>
                 <div class="section-content">
                     <div class="profiles-list" id="profiles-list">
@@ -371,12 +490,12 @@
             <!-- Log Export -->
             <div class="settings-section">
                 <div class="section-header">
-                    <h2>📤 Log Export</h2>
+                    <h2>📤 <span data-i18n="logExport">Log Export</span></h2>
                 </div>
                 <div class="section-content">
                     <div class="toggle-row">
                         <div class="toggle-label">
-                            <span>Enable Log Export</span>
+                            <span data-i18n="enableLogExport">Enable Log Export</span>
                             <span>Send alerts and events to external systems</span>
                         </div>
                         <label class="toggle-switch">
@@ -385,7 +504,7 @@
                         </label>
                     </div>
                     <div class="form-group" style="margin-top: 1rem;">
-                        <label>Export Type</label>
+                        <label data-i18n="exportType">Export Type</label>
                         <select id="log-type">
                             <option value="elasticsearch">Elasticsearch</option>
                             <option value="graylog">Graylog (GELF)</option>
@@ -396,8 +515,9 @@
                         <input type="text" id="es-url" placeholder="http://localhost:9200">
                     </div>
                     <div class="btn-row">
-                        <button class="btn-secondary" onclick="testLogConnection()">Test Connection</button>
-                        <button class="btn-save" onclick="saveLogSettings()">Save</button>
+                        <button class="btn-secondary" onclick="testLogConnection()" data-i18n="testConnection">Test
+                            Connection</button>
+                        <button class="btn-save" onclick="saveLogSettings()" data-i18n="save">Save</button>
                     </div>
                 </div>
             </div>
@@ -405,12 +525,12 @@
             <!-- Notifications -->
             <div class="settings-section">
                 <div class="section-header">
-                    <h2>🔔 Notifications</h2>
+                    <h2>🔔 <span data-i18n="notifications">Notifications</span></h2>
                 </div>
                 <div class="section-content">
                     <div class="toggle-row">
                         <div class="toggle-label">
-                            <span>Browser Notifications</span>
+                            <span data-i18n="browserNotifications">Browser Notifications</span>
                             <span>Show desktop notifications for new alerts</span>
                         </div>
                         <label class="toggle-switch">
@@ -420,13 +540,98 @@
                     </div>
                     <div class="toggle-row">
                         <div class="toggle-label">
-                            <span>Sound Alerts</span>
+                            <span data-i18n="soundAlerts">Sound Alerts</span>
                             <span>Play sound for critical alerts</span>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notify-sound">
-                            <span class="toggle-slider"></span>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <button class="btn-secondary" onclick="testAlertSound()"
+                                style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">🔊 Test</button>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notify-sound" onchange="toggleSoundAlert(this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SNMP Testing Tools -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2>🔬 <span data-i18n="snmpTestingTools">SNMP 測試工具</span></h2>
+                </div>
+                <div class="section-content">
+                    <h4 style="margin-bottom: 1rem; color: var(--text-secondary);" data-i18n="snmpConnectionTest">SNMP
+                        Connection Test</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="targetIp">Target IP</label>
+                            <input type="text" id="test-ip" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="communityString">Community String</label>
+                            <input type="text" id="test-community" placeholder="public">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="oidOptional">OID (Optional)</label>
+                        <select id="test-oid">
+                            <option value="1.3.6.1.2.1.1.1.0" data-i18n="sysDescr">sysDescr - System Description
+                            </option>
+                            <option value="1.3.6.1.2.1.1.5.0" data-i18n="sysName">sysName - Hostname</option>
+                            <option value="1.3.6.1.2.1.1.3.0" data-i18n="sysUpTime">sysUpTime - Uptime</option>
+                            <option value="1.0.8802.1.1.2.1.4.1.1" data-i18n="lldpNeighbors">lldpRemTable - LLDP
+                                Neighbors</option>
+                            <option value="custom" data-i18n="customOidOption">Custom OID...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="custom-oid-group" style="display: none;">
+                        <label data-i18n="customOid">Custom OID</label>
+                        <input type="text" id="custom-oid" placeholder="1.3.6.1.2.1.1.1.0">
+                    </div>
+                    <div class="btn-row" style="border-top: none; padding-top: 0;">
+                        <button class="btn-secondary" onclick="testSnmpWalk()" id="btn-snmpwalk">🔍 SNMP Walk</button>
+                        <button class="btn-save" onclick="testSnmpGet()" id="btn-snmpget">📡 SNMP Get</button>
+                    </div>
+                    <div id="snmp-result" style="display: none; margin-top: 1rem;">
+                        <label style="color: var(--text-secondary); font-size: 0.875rem;" data-i18n="testResult">Test
+                            Result</label>
+                        <pre id="snmp-result-content"
+                            style="background: var(--bg-primary); padding: 1rem; border-radius: 6px; overflow-x: auto; max-height: 200px; font-size: 0.75rem; color: var(--text-primary); margin-top: 0.5rem;"></pre>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+                    <h4 style="margin-bottom: 1rem; color: var(--text-secondary);" data-i18n="manualDiscovery">Manual
+                        Device Discovery</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label data-i18n="discoveryIp">IP Address</label>
+                            <input type="text" id="discover-ip" placeholder="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="discoveryCommunity">Community String</label>
+                            <input type="text" id="discover-community" placeholder="public">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="discover-recursive" checked style="width: auto;">
+                            <span data-i18n="recursiveDiscovery">Recursive Discovery (Discover LLDP Neighbors)</span>
                         </label>
+                        <div class="form-help" data-i18n="recursiveDiscoveryHelp">When enabled, automatically discovers
+                            all neighbors of discovered devices</div>
+                    </div>
+                    <div class="btn-row" style="border-top: none; padding-top: 0;">
+                        <button class="btn-save" onclick="manualDiscover()" id="btn-discover">🔎 <span
+                                data-i18n="startDiscovery">Start Discovery</span></button>
+                    </div>
+                    <div id="discover-result" style="display: none; margin-top: 1rem;">
+                        <label style="color: var(--text-secondary); font-size: 0.875rem;"
+                            data-i18n="discoveryResult">Discovery Result</label>
+                        <div id="discover-result-content"
+                            style="background: var(--bg-primary); padding: 1rem; border-radius: 6px; margin-top: 0.5rem;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -656,10 +861,78 @@
             }
         }
 
-        function saveSnmpSettings() {
-            // Would save to backend
-            alert('SNMP settings saved (demo)');
+        // ===== Sound Alert Functions =====
+        function testAlertSound() {
+            if (window.AlertSound) {
+                AlertSound.playTest();
+            } else {
+                // Fallback: load sound.js dynamically
+                const script = document.createElement('script');
+                script.src = '/static/js/sound.js';
+                script.onload = function () {
+                    AlertSound.playTest();
+                };
+                document.head.appendChild(script);
+            }
         }
+
+        function toggleSoundAlert(enabled) {
+            localStorage.setItem('notify_sound', enabled ? 'true' : 'false');
+            if (window.AlertSound) {
+                AlertSound.setEnabled(enabled);
+            }
+        }
+
+        function loadSoundSettings() {
+            const enabled = localStorage.getItem('notify_sound') === 'true';
+            document.getElementById('notify-sound').checked = enabled;
+        }
+
+        function saveSnmpSettings() {
+            // Save subnet settings to localStorage
+            const subnets = document.getElementById('allowed-subnets').value;
+            const enforceSubnet = document.getElementById('enforce-subnet').checked;
+            localStorage.setItem('snmp_allowed_subnets', subnets);
+            localStorage.setItem('snmp_enforce_subnet', enforceSubnet);
+            alert(i18n.t('settingsSaved'));
+        }
+
+        function loadSnmpSettings() {
+            const subnets = localStorage.getItem('snmp_allowed_subnets') || '';
+            const enforceSubnet = localStorage.getItem('snmp_enforce_subnet') !== 'false';
+            document.getElementById('allowed-subnets').value = subnets;
+            document.getElementById('enforce-subnet').checked = enforceSubnet;
+        }
+
+        // ===== Language and Theme =====
+        function changeLanguage(lang) {
+            if (window.i18n) {
+                i18n.setLanguage(lang);
+            }
+        }
+
+        function changeTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        function loadAppearanceSettings() {
+            // Language
+            const savedLang = localStorage.getItem('language') || 'en';
+            document.getElementById('language-select').value = savedLang;
+
+            // Theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.getElementById('theme-select').value = savedTheme;
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        // Load settings on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSnmpSettings();
+            loadAppearanceSettings();
+            loadSoundSettings();
+        });
 
         function saveLogSettings() {
             // Would save to backend
@@ -669,6 +942,221 @@
         function testLogConnection() {
             // Would test connection
             alert('Connection test: Success (demo)');
+        }
+
+        // ===== Subnet Validation =====
+        function ipToLong(ip) {
+            const parts = ip.split('.').map(Number);
+            return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+        }
+
+        function isIpInCidr(ip, cidr) {
+            const [network, bits] = cidr.split('/');
+            const mask = -1 << (32 - parseInt(bits));
+            const ipLong = ipToLong(ip);
+            const networkLong = ipToLong(network);
+            return (ipLong & mask) === (networkLong & mask);
+        }
+
+        function isIpAllowed(ip) {
+            const enforceSubnet = document.getElementById('enforce-subnet').checked;
+            if (!enforceSubnet) return true;
+
+            const subnetsText = document.getElementById('allowed-subnets').value.trim();
+            if (!subnetsText) return true; // Empty means no restriction
+
+            const subnets = subnetsText.split('\n').map(s => s.trim()).filter(s => s && s.includes('/'));
+            if (subnets.length === 0) return true;
+
+            for (const subnet of subnets) {
+                if (isIpInCidr(ip, subnet)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function validateIpBeforeAction(ip) {
+            if (!isIpAllowed(ip)) {
+                const subnets = document.getElementById('allowed-subnets').value.trim().split('\n').filter(s => s.trim()).join(', ');
+                alert(i18n.t('ipNotInSubnets').replace('{ip}', ip).replace('{subnets}', subnets || i18n.t('notConfigured')));
+                return false;
+            }
+            return true;
+        }
+
+        // SNMP Testing Tools
+        document.getElementById('test-oid').addEventListener('change', function () {
+            document.getElementById('custom-oid-group').style.display =
+                this.value === 'custom' ? 'block' : 'none';
+        });
+
+        async function testSnmpGet() {
+            const ip = document.getElementById('test-ip').value.trim();
+            const community = document.getElementById('test-community').value.trim() || 'public';
+            const oidSelect = document.getElementById('test-oid').value;
+            const oid = oidSelect === 'custom'
+                ? document.getElementById('custom-oid').value.trim()
+                : oidSelect;
+
+            if (!ip) {
+                alert(i18n.t('enterTargetIp'));
+                return;
+            }
+
+            if (!validateIpBeforeAction(ip)) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-snmpget');
+            btn.disabled = true;
+            btn.textContent = i18n.t('testing');
+
+            try {
+                const response = await fetch(`${API_BASE}/snmp/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, community, oid, method: 'get' })
+                });
+                const data = await response.json();
+
+                document.getElementById('snmp-result').style.display = 'block';
+                const resultEl = document.getElementById('snmp-result-content');
+
+                if (data.success) {
+                    resultEl.style.color = 'var(--success)';
+                    resultEl.textContent = `✅ 成功\n\nOID: ${oid}\n結果: ${data.result}`;
+                } else {
+                    resultEl.style.color = 'var(--danger)';
+                    resultEl.textContent = `❌ 失敗\n\n錯誤: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById('snmp-result').style.display = 'block';
+                const resultEl = document.getElementById('snmp-result-content');
+                resultEl.style.color = 'var(--danger)';
+                resultEl.textContent = `❌ 請求失敗: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📡 SNMP Get';
+            }
+        }
+
+        async function testSnmpWalk() {
+            const ip = document.getElementById('test-ip').value.trim();
+            const community = document.getElementById('test-community').value.trim() || 'public';
+            const oidSelect = document.getElementById('test-oid').value;
+            const oid = oidSelect === 'custom'
+                ? document.getElementById('custom-oid').value.trim()
+                : oidSelect;
+
+            if (!ip) {
+                alert(i18n.t('enterTargetIp'));
+                return;
+            }
+
+            if (!validateIpBeforeAction(ip)) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-snmpwalk');
+            btn.disabled = true;
+            btn.textContent = i18n.t('testing');
+
+            try {
+                const response = await fetch(`${API_BASE}/snmp/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, community, oid, method: 'walk' })
+                });
+                const data = await response.json();
+
+                document.getElementById('snmp-result').style.display = 'block';
+                const resultEl = document.getElementById('snmp-result-content');
+
+                if (data.success) {
+                    resultEl.style.color = 'var(--success)';
+                    const results = Array.isArray(data.result)
+                        ? data.result.map(r => `${r.oid}: ${r.value}`).join('\n')
+                        : data.result;
+                    resultEl.textContent = `✅ SNMP Walk 成功 (${data.count || 0} 筆結果)\n\n${results}`;
+                } else {
+                    resultEl.style.color = 'var(--danger)';
+                    resultEl.textContent = `❌ 失敗\n\n錯誤: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById('snmp-result').style.display = 'block';
+                const resultEl = document.getElementById('snmp-result-content');
+                resultEl.style.color = 'var(--danger)';
+                resultEl.textContent = `❌ 請求失敗: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 SNMP Walk';
+            }
+        }
+
+        async function manualDiscover() {
+            const ip = document.getElementById('discover-ip').value.trim();
+            const community = document.getElementById('discover-community').value.trim() || 'public';
+            const recursive = document.getElementById('discover-recursive').checked;
+
+            if (!ip) {
+                alert(i18n.t('enterStartIp'));
+                return;
+            }
+
+            if (!validateIpBeforeAction(ip)) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-discover');
+            btn.disabled = true;
+            btn.textContent = i18n.t('discovering');
+
+            try {
+                const response = await fetch(`${API_BASE}/discovery/manual`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, community, recursive })
+                });
+                const data = await response.json();
+
+                document.getElementById('discover-result').style.display = 'block';
+                const resultEl = document.getElementById('discover-result-content');
+
+                if (data.success) {
+                    let html = `<div style="color: var(--success); margin-bottom: 0.5rem;">✅ ${i18n.t('discoveryComplete')}</div>`;
+                    html += `<div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem;">${i18n.t('discoveredDevices').replace('{count}', data.discovered_count || 0).replace('{added}', data.added_count || 0)}</div>`;
+
+                    if (data.devices && data.devices.length > 0) {
+                        html += `<div style="display: flex; flex-direction: column; gap: 0.5rem;">`;
+                        data.devices.forEach(d => {
+                            const statusColor = d.is_new ? 'var(--success)' : 'var(--text-secondary)';
+                            html += `
+                                <div style="background: var(--bg-secondary); padding: 0.5rem 0.75rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 500;">${d.hostname || d.ip}</span>
+                                    <span style="font-size: 0.75rem; color: ${statusColor};">${d.is_new ? i18n.t('newDevice') : i18n.t('alreadyExists')}</span>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    resultEl.innerHTML = html;
+                } else {
+                    resultEl.innerHTML = `<div style="color: var(--danger);">❌ ${i18n.t('discoveryFailed')}: ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('discover-result').style.display = 'block';
+                const resultEl = document.getElementById('discover-result-content');
+                resultEl.innerHTML = `<div style="color: var(--danger);">❌ ${i18n.t('discoveryFailed')}: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `🔎 <span data-i18n="startDiscovery">${i18n.t('startDiscovery')}</span>`;
+            }
+        }
+
+        // Initialize i18n
+        if (window.i18n) {
+            i18n.init();
         }
     </script>
 </body>

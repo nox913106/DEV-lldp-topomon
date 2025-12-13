@@ -11,7 +11,7 @@ import os
 
 from app.config import get_settings
 from app.db.database import init_db
-from app.api import devices, topology, alerts, profiles, groups, discovery
+from app.api import devices, topology, alerts, profiles, groups, discovery, snmp
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +64,7 @@ app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["Alert Profiles"])
 app.include_router(groups.router, prefix="/api/v1/groups", tags=["Device Groups"])
 app.include_router(discovery.router, prefix="/api/v1/discovery", tags=["Discovery"])
+app.include_router(snmp.router, prefix="/api/v1/snmp", tags=["SNMP Testing"])
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
