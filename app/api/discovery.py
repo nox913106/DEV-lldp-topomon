@@ -115,6 +115,8 @@ async def manual_discover(request: ManualDiscoveryRequest, db: AsyncSession = De
         
         discovered_devices = []
         added_count = 0
+        hostname = None
+        snmp_success = False
         
         # Try to get device info via SNMP
         try:
@@ -132,56 +134,59 @@ async def manual_discover(request: ManualDiscoveryRequest, db: AsyncSession = De
                 ObjectType(ObjectIdentity('1.3.6.1.2.1.1.5.0'))  # sysName
             )
             
-            hostname = None
             if not errorIndication and not errorStatus and varBinds:
                 hostname = varBinds[0][1].prettyPrint()
-            
-            # Check if device already exists
-            result = await db.execute(
-                select(Device).where(Device.ip_address == request.ip)
-            )
-            existing = result.scalar_one_or_none()
-            
-            if existing:
-                discovered_devices.append({
-                    "ip": request.ip,
-                    "hostname": existing.hostname,
-                    "is_new": False
-                })
-            else:
-                # Add new device
-                new_device = Device(
-                    hostname=hostname or f"device-{request.ip.replace('.', '-')}",
-                    ip_address=request.ip,
-                    snmp_community=request.community,
-                    device_type="access",
-                    vendor="unknown",
-                    status="managed"
-                )
-                db.add(new_device)
-                await db.commit()
-                
-                discovered_devices.append({
-                    "ip": request.ip,
-                    "hostname": new_device.hostname,
-                    "is_new": True
-                })
-                added_count += 1
-            
-            # TODO: If recursive, discover LLDP neighbors
-            if request.recursive:
-                # Placeholder for recursive discovery
-                pass
+                snmp_success = True
                 
         except ImportError:
-            # Demo mode without pysnmp
+            # pysnmp not available, continue without SNMP
+            pass
+        except Exception as e:
+            # SNMP connection failed, continue with default hostname
+            print(f"SNMP connection to {request.ip} failed: {e}")
+        
+        # Generate hostname if SNMP failed
+        if not hostname:
+            hostname = f"device-{request.ip.replace('.', '-')}"
+        
+        # Check if device already exists
+        result = await db.execute(
+            select(Device).where(Device.ip_address == request.ip)
+        )
+        existing = result.scalar_one_or_none()
+        
+        if existing:
             discovered_devices.append({
                 "ip": request.ip,
-                "hostname": f"demo-device-{request.ip.split('.')[-1]}",
+                "hostname": existing.hostname,
+                "is_new": False
+            })
+        else:
+            # Add new device to database
+            new_device = Device(
+                hostname=hostname,
+                ip_address=request.ip,
+                snmp_community=request.community,
+                device_type="access",
+                vendor="unknown",
+                status="managed"
+            )
+            db.add(new_device)
+            await db.commit()
+            await db.refresh(new_device)
+            
+            discovered_devices.append({
+                "ip": request.ip,
+                "hostname": new_device.hostname,
                 "is_new": True
             })
-            added_count = 1
+            added_count += 1
         
+        # TODO: If recursive, discover LLDP neighbors
+        if request.recursive:
+            # Placeholder for recursive discovery
+            pass
+            
         return ManualDiscoveryResponse(
             success=True,
             discovered_count=len(discovered_devices),
@@ -190,6 +195,8 @@ async def manual_discover(request: ManualDiscoveryRequest, db: AsyncSession = De
         )
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return ManualDiscoveryResponse(
             success=False,
             error=str(e)
