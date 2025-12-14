@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "DEV-lldp-topomon"
     app_debug: bool = False
     app_log_level: str = "INFO"
+    app_secret_key: str = "change-this-to-random-string"
     
     # Database (默認使用 SQLite 方便本地測試)
     database_url: str = "sqlite+aiosqlite:///./topomon.db"
@@ -33,10 +34,17 @@ class Settings(BaseSettings):
     log_export_enabled: bool = False
     log_export_type: str = "elasticsearch"
     elasticsearch_url: Optional[str] = None
+    elasticsearch_index_prefix: str = "topomon-"
+    
+    # Graylog Settings (Optional)
+    graylog_host: str = "localhost"
+    graylog_port: int = 12201
+    graylog_protocol: str = "udp"
     
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # 忽略額外的環境變數
 
 
 @lru_cache()

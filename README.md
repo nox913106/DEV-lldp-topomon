@@ -45,11 +45,19 @@ docker-compose up -d
 open http://localhost:8080
 ```
 
+## 快速部署
+
+```bash
+# 自動化部署（需要 root 權限）
+sudo bash deploy.sh docker   # Docker 部署（建議）
+sudo bash deploy.sh native   # Native 部署
+```
+
 ## 文件
 
 - [系統設計文件 (SDD)](docs/SDD.md)
 - [API 文件](docs/API.md)
-- [部署指南](docs/DEPLOYMENT.md)
+- [Ubuntu 部署指南](docs/DEPLOYMENT.md) ⭐ 新增
 - [設定說明](docs/CONFIGURATION.md)
 
 ## 授權
