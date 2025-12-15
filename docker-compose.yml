@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # FastAPI Application
   app:
@@ -10,6 +8,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://topomon:topomon@db:5432/topomon
       - REDIS_URL=redis://redis:6379
       - APP_DEBUG=true
+      - TZ=Asia/Taipei
     depends_on:
       db:
         condition: service_healthy
@@ -17,17 +16,19 @@ services:
         condition: service_started
     volumes:
       - .:/app
+      - /etc/localtime:/etc/localtime:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
     networks:
       - topomon_net
     restart: unless-stopped
 
-  # SNMP Collector Service
+  # SNMP Collector Service - 使用 host 網路以訪問外部 SNMP 設備
   collector:
     build: .
     environment:
-      - DATABASE_URL=postgresql+asyncpg://topomon:topomon@db:5432/topomon
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql+asyncpg://topomon:topomon@localhost:5432/topomon
+      - REDIS_URL=redis://localhost:6379
+      - TZ=Asia/Taipei
     depends_on:
       db:
         condition: service_healthy
@@ -35,9 +36,12 @@ services:
         condition: service_started
     volumes:
       - .:/app
+      - /etc/localtime:/etc/localtime:ro
     command: python -m app.collector
-    networks:
-      - topomon_net
+    network_mode: host
+    extra_hosts:
+      - "db:127.0.0.1"
+      - "redis:127.0.0.1"
     restart: unless-stopped
 
   # PostgreSQL Database
@@ -47,8 +51,10 @@ services:
       - POSTGRES_USER=topomon
       - POSTGRES_PASSWORD=topomon
       - POSTGRES_DB=topomon
+      - TZ=Asia/Taipei
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -63,8 +69,11 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
+    environment:
+      - TZ=Asia/Taipei
     volumes:
       - redisdata:/data
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "6379:6379"
     networks:
@@ -74,13 +83,7 @@ services:
 networks:
   topomon_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.255.0/24
-          gateway: 192.168.255.254
 
 volumes:
   pgdata:
   redisdata:
-
-
