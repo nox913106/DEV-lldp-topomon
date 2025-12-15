@@ -94,22 +94,30 @@ class SNMPCollector:
             return None
     
     async def _snmp_walk(self, ip: str, oid: str) -> Dict[str, Any]:
-        """Perform SNMP WALK operation"""
+        """Perform SNMP WALK operation using nextCmd for pysnmp 4.x compatibility"""
         results = {}
         
         try:
-            iterator = bulkCmd(
-                SnmpEngine(),
-                CommunityData(self.community),
-                UdpTransportTarget((ip, 161), timeout=self.timeout, retries=self.retries),
-                ContextData(),
-                0, 25,  # non-repeaters, max-repetitions
-                ObjectType(ObjectIdentity(oid)),
-                lexicographicMode=False
-            )
+            # Use getNext in a loop for pysnmp 4.x compatibility
+            current_oid = oid
+            max_iterations = 1000  # Prevent infinite loops
             
-            async for error_indication, error_status, error_index, var_binds in iterator:
+            for _ in range(max_iterations):
+                iterator = nextCmd(
+                    SnmpEngine(),
+                    CommunityData(self.community),
+                    UdpTransportTarget((ip, 161), timeout=self.timeout, retries=self.retries),
+                    ContextData(),
+                    ObjectType(ObjectIdentity(current_oid)),
+                    lexicographicMode=False
+                )
+                
+                error_indication, error_status, error_index, var_binds = await iterator
+                
                 if error_indication or error_status:
+                    break
+                
+                if not var_binds:
                     break
                 
                 for var_bind in var_binds:
@@ -118,6 +126,7 @@ class SNMPCollector:
                         # Extract index from OID
                         index = oid_str[len(oid)+1:] if len(oid_str) > len(oid) else ""
                         results[index] = var_bind[1]
+                        current_oid = oid_str  # Move to next OID
                     else:
                         # Walked past our OID tree
                         return results
