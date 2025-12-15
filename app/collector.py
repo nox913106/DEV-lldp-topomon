@@ -26,6 +26,99 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+async def auto_discover_neighbor(db, parent_device: Device, neighbor, community: str, log_exporter):
+    """Auto-discover and add neighbor device to database"""
+    try:
+        from pysnmp.hlapi.asyncio import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
+        from app.core.snmp_oids import detect_vendor, SYS_NAME, SYS_DESCR
+        import socket
+        
+        # Check if neighbor already exists by hostname
+        existing = await db.execute(
+            select(Device).where(Device.hostname == neighbor.remote_hostname)
+        )
+        if existing.scalar_one_or_none():
+            return  # Already exists
+        
+        # Try to resolve neighbor IP
+        neighbor_ip = None
+        
+        # Method 1: Check if remote_chassis_id looks like an IP
+        if neighbor.remote_chassis_id:
+            try:
+                parts = neighbor.remote_chassis_id.split('.')
+                if len(parts) == 4 and all(0 <= int(p) <= 255 for p in parts):
+                    neighbor_ip = neighbor.remote_chassis_id
+            except:
+                pass
+        
+        # Method 2: Try DNS resolution
+        if not neighbor_ip and neighbor.remote_hostname:
+            try:
+                neighbor_ip = socket.gethostbyname(neighbor.remote_hostname)
+            except socket.gaierror:
+                pass
+        
+        if not neighbor_ip:
+            logger.debug(f"Could not resolve IP for neighbor {neighbor.remote_hostname}")
+            return
+        
+        # Check if IP already exists
+        existing_ip = await db.execute(
+            select(Device).where(Device.ip_address == neighbor_ip)
+        )
+        if existing_ip.scalar_one_or_none():
+            return  # Already exists
+        
+        # Try SNMP to validate device
+        try:
+            error_indication, error_status, error_index, var_binds = await getCmd(
+                SnmpEngine(),
+                CommunityData(community),
+                UdpTransportTarget((neighbor_ip, 161), timeout=2.0, retries=0),
+                ContextData(),
+                ObjectType(ObjectIdentity(SYS_NAME)),
+                ObjectType(ObjectIdentity(SYS_DESCR))
+            )
+            
+            if error_indication or error_status or not var_binds:
+                logger.debug(f"SNMP failed for neighbor {neighbor_ip}")
+                return
+            
+            hostname = var_binds[0][1].prettyPrint()
+            sys_descr = var_binds[1][1].prettyPrint() if len(var_binds) > 1 else ""
+            vendor = detect_vendor(sys_descr)
+            
+            # Add new device
+            new_device = Device(
+                hostname=hostname,
+                ip_address=neighbor_ip,
+                snmp_community=community,
+                device_type="access",
+                vendor=vendor,
+                status="managed",
+                auto_discover=True,
+                parent_device_id=parent_device.id,
+                last_seen=datetime.utcnow()
+            )
+            db.add(new_device)
+            
+            logger.info(f"Auto-discovered neighbor: {hostname} ({neighbor_ip}) via {parent_device.hostname}")
+            
+            await log_exporter.log_discovery(
+                event_type="new_device",
+                device_hostname=hostname,
+                device_ip=neighbor_ip,
+                extra={"discovered_via": parent_device.hostname}
+            )
+            
+        except Exception as e:
+            logger.debug(f"SNMP probe failed for {neighbor_ip}: {e}")
+            
+    except Exception as e:
+        logger.error(f"Error in auto_discover_neighbor: {e}")
+
+
 async def poll_all_devices():
     """Poll all managed devices"""
     async with async_session_maker() as db:
@@ -47,7 +140,13 @@ async def poll_all_devices():
                 collector = SNMPCollector(
                     community=community,
                     timeout=settings.snmp_timeout,
-                    retries=settings.snmp_retries
+                    retries=settings.snmp_retries,
+                    snmp_version=device.snmp_version or "v2c",
+                    v3_username=device.snmpv3_username,
+                    v3_auth_protocol=device.snmpv3_auth_protocol,
+                    v3_auth_password=device.snmpv3_auth_password,
+                    v3_priv_protocol=device.snmpv3_priv_protocol,
+                    v3_priv_password=device.snmpv3_priv_password
                 )
                 return await poll_single_device(collector, device, db)
         
@@ -136,6 +235,12 @@ async def poll_single_device(collector: SNMPCollector, device: Device, db):
                             "remote_hostname": neighbor.remote_hostname,
                             "remote_port": neighbor.remote_port
                         }
+                    )
+                
+                # Auto-discover neighbor devices if enabled
+                if device.auto_discover:
+                    await auto_discover_neighbor(
+                        db, device, neighbor, collector.community, log_exporter
                     )
             
             logger.debug(f"Polled {device.hostname}: OK")

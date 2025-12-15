@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     collector_interval: int = 300  # 5 minutes
     collector_concurrent: int = 20
     
+    # Discovery Settings
+    discovery_enabled: bool = True
+    discovery_interval: int = 3600  # 1 hour
+    allowed_subnets: str = ""  # Comma-separated CIDR list
+    
     # Log Export (Optional)
     log_export_enabled: bool = False
     log_export_type: str = "elasticsearch"

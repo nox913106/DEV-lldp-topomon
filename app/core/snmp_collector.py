@@ -56,24 +56,66 @@ class DeviceMetrics:
 
 
 class SNMPCollector:
-    """SNMP data collector for network devices"""
+    """SNMP data collector for network devices - supports v2c and v3"""
     
     def __init__(
         self,
         community: str = "public",
         timeout: int = 5,
-        retries: int = 2
+        retries: int = 2,
+        snmp_version: str = "v2c",
+        v3_username: str = None,
+        v3_auth_protocol: str = None,  # MD5, SHA, SHA256
+        v3_auth_password: str = None,
+        v3_priv_protocol: str = None,  # DES, AES, AES256
+        v3_priv_password: str = None
     ):
         self.community = community
         self.timeout = timeout
         self.retries = retries
+        self.snmp_version = snmp_version
+        self.v3_username = v3_username
+        self.v3_auth_protocol = v3_auth_protocol
+        self.v3_auth_password = v3_auth_password
+        self.v3_priv_protocol = v3_priv_protocol
+        self.v3_priv_password = v3_priv_password
+    
+    def _get_auth_data(self):
+        """Get authentication data based on SNMP version"""
+        if self.snmp_version == "v3" and self.v3_username:
+            from pysnmp.hlapi.asyncio import UsmUserData, usmHMACMD5AuthProtocol, usmHMACSHAAuthProtocol
+            from pysnmp.hlapi.asyncio import usmDESPrivProtocol, usmAesCfb128Protocol
+            
+            # Select auth protocol
+            auth_protocol = None
+            if self.v3_auth_protocol == "MD5":
+                auth_protocol = usmHMACMD5AuthProtocol
+            elif self.v3_auth_protocol in ("SHA", "SHA256"):
+                auth_protocol = usmHMACSHAAuthProtocol
+            
+            # Select privacy protocol
+            priv_protocol = None
+            if self.v3_priv_protocol == "DES":
+                priv_protocol = usmDESPrivProtocol
+            elif self.v3_priv_protocol in ("AES", "AES128", "AES256"):
+                priv_protocol = usmAesCfb128Protocol
+            
+            return UsmUserData(
+                self.v3_username,
+                authKey=self.v3_auth_password,
+                privKey=self.v3_priv_password,
+                authProtocol=auth_protocol,
+                privProtocol=priv_protocol
+            )
+        else:
+            return CommunityData(self.community)
     
     async def _snmp_get(self, ip: str, oid: str) -> Optional[Any]:
         """Perform SNMP GET operation"""
         try:
             iterator = getCmd(
                 SnmpEngine(),
-                CommunityData(self.community),
+                self._get_auth_data(),
                 UdpTransportTarget((ip, 161), timeout=self.timeout, retries=self.retries),
                 ContextData(),
                 ObjectType(ObjectIdentity(oid))
@@ -105,7 +147,7 @@ class SNMPCollector:
             for _ in range(max_iterations):
                 iterator = nextCmd(
                     SnmpEngine(),
-                    CommunityData(self.community),
+                    self._get_auth_data(),
                     UdpTransportTarget((ip, 161), timeout=self.timeout, retries=self.retries),
                     ContextData(),
                     ObjectType(ObjectIdentity(current_oid)),

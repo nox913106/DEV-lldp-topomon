@@ -1,7 +1,7 @@
 """
 Device model - Network device information
 """
-from sqlalchemy import Column, Integer, String, Float, BigInteger, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, BigInteger, DateTime, ForeignKey, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -28,7 +28,18 @@ class Device(Base):
     model = Column(String(100))  # Device model (e.g., "WS-C3850-48P")
     firmware_version = Column(String(100))  # Firmware/OS version
     device_type = Column(String(50))  # router, switch, firewall
-    snmp_community = Column(String(255), nullable=False)
+    
+    # SNMP Settings
+    snmp_community = Column(String(255), nullable=True)
+    snmp_version = Column(String(10), default="v2c")  # "v2c" or "v3"
+    snmpv3_username = Column(String(255), nullable=True)
+    snmpv3_auth_protocol = Column(String(20), nullable=True)  # MD5, SHA, SHA256
+    snmpv3_auth_password = Column(String(255), nullable=True)
+    snmpv3_priv_protocol = Column(String(20), nullable=True)  # DES, AES, AES256
+    snmpv3_priv_password = Column(String(255), nullable=True)
+    
+    # Auto-discovery setting (default True)
+    auto_discover = Column(Boolean, default=True)
     
     # Parent device for hierarchy (e.g., access switch -> distribution -> core)
     parent_device_id = Column(Integer, ForeignKey("devices.id"), nullable=True, index=True)

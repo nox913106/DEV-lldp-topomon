@@ -11,7 +11,9 @@ import os
 
 from app.config import get_settings
 from app.db.database import init_db
-from app.api import devices, topology, alerts, profiles, groups, discovery, snmp
+from app.api import devices, topology, alerts, profiles, groups, discovery, snmp, settings
+from app.core.discovery_scheduler import start_discovery_scheduler
+from app.api.settings import load_settings as load_app_settings
 
 # Configure logging
 logging.basicConfig(
@@ -20,7 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-settings = get_settings()
+settings_config = get_settings()
 
 # Get static files path
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
@@ -30,19 +32,29 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
-    logger.info(f"Starting {settings.app_name}...")
+    logger.info(f"Starting {settings_config.app_name}...")
     await init_db()
     logger.info("Database initialized")
+    
+    # Start discovery scheduler if enabled
+    app_settings = load_app_settings()
+    if app_settings.discovery_enabled and app_settings.allowed_subnets:
+        await start_discovery_scheduler(
+            subnets=app_settings.allowed_subnets,
+            community=app_settings.default_community,
+            interval=app_settings.discovery_interval
+        )
+        logger.info("Discovery Scheduler started")
     
     yield
     
     # Shutdown
-    logger.info(f"Shutting down {settings.app_name}...")
+    logger.info(f"Shutting down {settings_config.app_name}...")
 
 
 # Create FastAPI application
 app = FastAPI(
-    title=settings.app_name,
+    title=settings_config.app_name,
     description="LLDP/CDP Network Topology Monitor",
     version="1.0.0",
     lifespan=lifespan
@@ -65,6 +77,7 @@ app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["Alert Prof
 app.include_router(groups.router, prefix="/api/v1/groups", tags=["Device Groups"])
 app.include_router(discovery.router, prefix="/api/v1/discovery", tags=["Discovery"])
 app.include_router(snmp.router, prefix="/api/v1/snmp", tags=["SNMP Testing"])
+app.include_router(settings.router, prefix="/api/v1/settings", tags=["Settings"])
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
