@@ -28,12 +28,6 @@ settings = get_settings()
 
 async def poll_all_devices():
     """Poll all managed devices"""
-    collector = SNMPCollector(
-        community=settings.snmp_default_community,
-        timeout=settings.snmp_timeout,
-        retries=settings.snmp_retries
-    )
-    
     async with async_session_maker() as db:
         # Get all managed devices
         result = await db.execute(
@@ -48,6 +42,13 @@ async def poll_all_devices():
         
         async def poll_with_semaphore(device):
             async with semaphore:
+                # Use device-specific community, fallback to default
+                community = device.snmp_community or settings.snmp_default_community
+                collector = SNMPCollector(
+                    community=community,
+                    timeout=settings.snmp_timeout,
+                    retries=settings.snmp_retries
+                )
                 return await poll_single_device(collector, device, db)
         
         tasks = [poll_with_semaphore(d) for d in devices]
