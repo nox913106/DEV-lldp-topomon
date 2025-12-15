@@ -432,14 +432,24 @@ class App {
     updateLastUpdate(timestamp) {
         const el = document.getElementById('last-update');
         if (el && timestamp) {
-            const date = new Date(timestamp);
+            // Ensure UTC is correctly parsed - add Z suffix if not present
+            let ts = timestamp;
+            if (!ts.endsWith('Z') && !ts.includes('+')) {
+                ts += 'Z';
+            }
+            const date = new Date(ts);
             el.textContent = `Last update: ${date.toLocaleTimeString()}`;
         }
     }
 
     formatTime(timestamp) {
         if (!timestamp) return '';
-        const date = new Date(timestamp);
+        // Ensure UTC is correctly parsed - add Z suffix if not present
+        let ts = timestamp;
+        if (!ts.endsWith('Z') && !ts.includes('+')) {
+            ts += 'Z';
+        }
+        const date = new Date(ts);
         return date.toLocaleTimeString();
     }
 
